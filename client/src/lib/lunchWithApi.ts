@@ -35,7 +35,7 @@ class LunchWithAPIClient {
 
     const headers: HeadersInit = {
       "Content-Type": "application/json",
-      "Authorization": `Bearer ${this.apiKey}`,
+      "Authorization": this.apiKey,
     };
 
     const config: RequestInit = {
