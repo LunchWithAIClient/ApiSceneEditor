@@ -63,6 +63,11 @@ Preferred communication style: Simple, everyday language.
 
 **API Design:**
 - RESTful endpoints prefixed with `/api`
+- **Backend Proxy** at `/api/lunchwith/*` forwards requests to LunchWith.ai API
+  - Solves browser CORS restrictions
+  - Preserves query strings for pagination/filtering support
+  - Excludes request body from GET/HEAD/DELETE methods
+  - Forwards API key from Authorization header to external API
 - Server-side rendering setup with Vite integration in development
 - Static file serving for production builds
 
@@ -78,10 +83,13 @@ Preferred communication style: Simple, everyday language.
 
 **Third-Party API Integration:**
 - **LunchWith.ai API:** Primary external service at `https://api.lunchwith.ai`
-  - Bearer token authentication using user-provided API key
-  - Stored in localStorage under `lunchwith_api_key`
+  - Raw API key authentication (no Bearer prefix) using user-provided key
+  - API key stored in localStorage under `lunchwith_api_key`
+  - Backend proxy at `/api/lunchwith/*` forwards requests to avoid browser CORS restrictions
   - Endpoints for Characters, Scenes, and Cast management
-  - RESTful operations: GET (list/detail), POST (create), PUT (update), DELETE
+  - API Operations: PUT (create), POST (update), GET (list/detail), DELETE (remove)
+  - Response format: All responses wrapped in `{ results: [...], statusCode: 200, ...metadata }`
+  - Frontend automatically unwraps `results` field for seamless integration
 
 **Database:**
 - **PostgreSQL** via Neon serverless driver (`@neondatabase/serverless`)
@@ -107,10 +115,17 @@ Preferred communication style: Simple, everyday language.
 
 **Architectural Rationale:**
 
-The application separates concerns between a lightweight backend (primarily for session management and potential server-side rendering) and a feature-rich frontend that communicates directly with the LunchWith.ai API. This architecture:
+The application uses a backend proxy pattern where the frontend communicates with the Express backend, which forwards requests to the LunchWith.ai API. This architecture:
 
-1. **Reduces backend complexity** by delegating business logic to the external API
-2. **Improves user experience** through client-side state management and optimistic updates
-3. **Maintains security** by requiring user-provided API keys (not server-stored credentials)
-4. **Enables future expansion** with the database and storage abstraction already in place
-5. **Supports rapid development** with hot module replacement and modern tooling
+1. **Solves CORS restrictions** by using server-to-server communication with the external API
+2. **Reduces backend complexity** by delegating business logic to the external API
+3. **Improves user experience** through client-side state management and optimistic updates
+4. **Maintains security** by requiring user-provided API keys (not server-stored credentials)
+5. **Enables future expansion** with the database and storage abstraction already in place
+6. **Supports rapid development** with hot module replacement and modern tooling
+
+**Key Implementation Details:**
+- Frontend makes requests to `/api/lunchwith/*` on the same origin (no CORS)
+- Backend proxy forwards to `https://api.lunchwith.ai` with proper headers
+- Update operations (POST) exclude ID fields from request body (IDs only in URL path)
+- API responses are unwrapped from `{ results: [...] }` envelope automatically
