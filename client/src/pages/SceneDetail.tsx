@@ -78,7 +78,9 @@ export default function SceneDetail() {
   const handleSaveCast = async (castData: Partial<Cast>) => {
     try {
       if (castData.cast_id) {
-        await apiClient.updateCast(sceneId, castData.cast_id, castData);
+        // Exclude cast_id and scene_id from the body as they should only be in the URL
+        const { cast_id, scene_id, ...updateData } = castData;
+        await apiClient.updateCast(sceneId, cast_id, updateData);
         toast({
           title: "Cast member updated",
           description: "The cast member has been updated successfully.",

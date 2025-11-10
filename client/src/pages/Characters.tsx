@@ -47,7 +47,9 @@ export default function Characters() {
   const handleSave = async (characterData: Partial<Character>) => {
     try {
       if (characterData.character_id) {
-        await apiClient.updateCharacter(characterData.character_id, characterData);
+        // Exclude character_id from the body as it should only be in the URL
+        const { character_id, ...updateData } = characterData;
+        await apiClient.updateCharacter(character_id, updateData);
         toast({
           title: "Character updated",
           description: "The character has been updated successfully.",

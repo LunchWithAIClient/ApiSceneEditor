@@ -1,6 +1,7 @@
 import type { Character, Scene, Cast, InsertCharacter, InsertScene, InsertCast } from "@shared/api-types";
 
-const API_BASE_URL = "https://api.lunchwith.ai";
+// Use backend proxy to avoid CORS issues in the browser
+const API_BASE_URL = "/api/lunchwith";
 const API_KEY_STORAGE_KEY = "lunchwith_api_key";
 
 class LunchWithAPIClient {
@@ -58,7 +59,28 @@ class LunchWithAPIClient {
 
     // Handle empty responses (like successful DELETE)
     const text = await response.text();
-    return text ? JSON.parse(text) : null;
+    if (!text) {
+      return null as T;
+    }
+
+    const data = JSON.parse(text);
+    
+    // LunchWith.ai API wraps responses in a results field
+    if (data && typeof data === 'object' && 'results' in data) {
+      // For single item responses, return the first item from results array
+      // For collection responses, return the results array
+      const results = data.results;
+      if (Array.isArray(results)) {
+        // If results is an array with one item and we're expecting a single object (PUT/POST),
+        // return just that item. Otherwise return the array (GET collection).
+        return (results.length === 1 && (method === 'PUT' || method === 'POST') 
+          ? results[0] 
+          : results) as T;
+      }
+      return results as T;
+    }
+    
+    return data as T;
   }
 
   // Character endpoints

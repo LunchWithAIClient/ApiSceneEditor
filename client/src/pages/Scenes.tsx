@@ -53,7 +53,9 @@ export default function Scenes() {
   const handleSave = async (sceneData: Partial<Scene>) => {
     try {
       if (sceneData.scene_id) {
-        await apiClient.updateScene(sceneData.scene_id, sceneData);
+        // Exclude scene_id from the body as it should only be in the URL
+        const { scene_id, ...updateData } = sceneData;
+        await apiClient.updateScene(scene_id, updateData);
         toast({
           title: "Scene updated",
           description: "The scene has been updated successfully.",
