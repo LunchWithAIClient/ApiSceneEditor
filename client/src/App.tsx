@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Switch, Route } from "wouter";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "./lib/queryClient";
@@ -9,6 +9,7 @@ import APIKeyDialog from "@/components/APIKeyDialog";
 import Characters from "@/pages/Characters";
 import Scenes from "@/pages/Scenes";
 import SceneDetail from "@/pages/SceneDetail";
+import { apiClient } from "@/lib/lunchWithApi";
 
 function Router() {
   return (
@@ -29,13 +30,21 @@ function Router() {
 }
 
 export default function App() {
-  //todo: remove mock functionality - API key should be stored and used for actual API calls
-  const [apiKey, setApiKey] = useState("mock-api-key-123");
+  const [apiKey, setApiKey] = useState("");
   const [apiKeyDialogOpen, setApiKeyDialogOpen] = useState(false);
+
+  useEffect(() => {
+    const storedKey = apiClient.getApiKey();
+    if (storedKey) {
+      setApiKey(storedKey);
+    } else {
+      setApiKeyDialogOpen(true);
+    }
+  }, []);
 
   const handleSaveApiKey = (key: string) => {
     setApiKey(key);
-    console.log("API key saved:", key);
+    apiClient.setApiKey(key);
   };
 
   return (

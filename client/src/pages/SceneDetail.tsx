@@ -1,43 +1,65 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRoute, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { ChevronLeft, Plus, Loader2 } from "lucide-react";
 import CastItem from "@/components/CastItem";
 import CastForm from "@/components/CastForm";
+import { apiClient } from "@/lib/lunchWithApi";
+import { useToast } from "@/hooks/use-toast";
 import type { Scene, Cast } from "@shared/api-types";
 
 export default function SceneDetail() {
   const [, params] = useRoute("/scenes/:id");
   const [, setLocation] = useLocation();
-  
-  //todo: remove mock functionality
-  const [scene] = useState<Scene>({
-    scene_id: params?.id || "1",
-    name: "The Detective's Office",
-    description: "You are in an office with a desk covered with the sports page of the newspaper. There are two chairs on the other side of the desk and a filing cabinet in the corner. On top of the filing cabinet is an old coffee machine. If it wasn't raining so hard you would open a window. The rain should have cooled things down but it's still hot."
-  });
-
-  const [castMembers, setCastMembers] = useState<Cast[]>([
-    {
-      cast_id: "1",
-      scene_id: scene.scene_id,
-      role: "Detective",
-      goal: "Solve the mystery and get paid.",
-      start: "The detective sits behind his desk, feet up, reading the sports page."
-    },
-    {
-      cast_id: "2",
-      scene_id: scene.scene_id,
-      role: "Client",
-      goal: "Convince the detective to take the case.",
-      start: "A woman in a rain-soaked coat enters through the door, hesitating in the doorway."
-    }
-  ]);
-
+  const [scene, setScene] = useState<Scene | null>(null);
+  const [castMembers, setCastMembers] = useState<Cast[]>([]);
   const [castFormOpen, setCastFormOpen] = useState(false);
   const [editingCast, setEditingCast] = useState<Cast | undefined>();
-  const [isLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const { toast } = useToast();
+
+  const sceneId = params?.id || "";
+
+  const loadScene = async () => {
+    if (!sceneId) return;
+    
+    try {
+      const data = await apiClient.getScene(sceneId);
+      setScene(data);
+    } catch (error) {
+      toast({
+        title: "Error loading scene",
+        description: error instanceof Error ? error.message : "Unknown error occurred",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const loadCastMembers = async () => {
+    if (!sceneId) return;
+    
+    try {
+      const data = await apiClient.getCastMembers(sceneId);
+      setCastMembers(data);
+    } catch (error) {
+      toast({
+        title: "Error loading cast members",
+        description: error instanceof Error ? error.message : "Unknown error occurred",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const loadData = async () => {
+    setIsLoading(true);
+    await Promise.all([loadScene(), loadCastMembers()]);
+    setIsLoading(false);
+  };
+
+  useEffect(() => {
+    loadData();
+  }, [sceneId]);
 
   const handleBack = () => {
     setLocation("/scenes");
@@ -53,34 +75,58 @@ export default function SceneDetail() {
     setCastFormOpen(true);
   };
 
-  const handleSaveCast = (castData: Partial<Cast>) => {
-    //todo: remove mock functionality
-    if (castData.cast_id) {
-      setCastMembers(prev => prev.map(c => 
-        c.cast_id === castData.cast_id 
-          ? { ...c, ...castData } as Cast
-          : c
-      ));
-    } else {
-      const newCast: Cast = {
-        cast_id: `cast-${Date.now()}`,
-        scene_id: scene.scene_id,
-        role: castData.role || "",
-        goal: castData.goal || "",
-        start: castData.start || ""
-      };
-      setCastMembers(prev => [...prev, newCast]);
+  const handleSaveCast = async (castData: Partial<Cast>) => {
+    try {
+      if (castData.cast_id) {
+        await apiClient.updateCast(sceneId, castData.cast_id, castData);
+        toast({
+          title: "Cast member updated",
+          description: "The cast member has been updated successfully.",
+        });
+      } else {
+        await apiClient.createCast(sceneId, {
+          scene_id: sceneId,
+          role: castData.role || "",
+          goal: castData.goal || "",
+          start: castData.start || "",
+        });
+        toast({
+          title: "Cast member created",
+          description: "The cast member has been created successfully.",
+        });
+      }
+      await loadCastMembers();
+    } catch (error) {
+      toast({
+        title: "Error saving cast member",
+        description: error instanceof Error ? error.message : "Unknown error occurred",
+        variant: "destructive",
+      });
     }
   };
 
-  const handleDeleteCast = (castId: string) => {
-    //todo: remove mock functionality
-    if (confirm("Are you sure you want to delete this cast member?")) {
-      setCastMembers(prev => prev.filter(c => c.cast_id !== castId));
+  const handleDeleteCast = async (castId: string) => {
+    if (!confirm("Are you sure you want to delete this cast member?")) {
+      return;
+    }
+
+    try {
+      await apiClient.deleteCast(sceneId, castId);
+      toast({
+        title: "Cast member deleted",
+        description: "The cast member has been deleted successfully.",
+      });
+      await loadCastMembers();
+    } catch (error) {
+      toast({
+        title: "Error deleting cast member",
+        description: error instanceof Error ? error.message : "Unknown error occurred",
+        variant: "destructive",
+      });
     }
   };
 
-  if (isLoading) {
+  if (isLoading || !scene) {
     return (
       <div className="flex items-center justify-center h-64">
         <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />

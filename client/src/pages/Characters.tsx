@@ -1,30 +1,38 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Plus, Loader2 } from "lucide-react";
 import CharacterCard from "@/components/CharacterCard";
 import CharacterForm from "@/components/CharacterForm";
+import { apiClient } from "@/lib/lunchWithApi";
+import { useToast } from "@/hooks/use-toast";
 import type { Character } from "@shared/api-types";
 
 export default function Characters() {
-  //todo: remove mock functionality
-  const [characters, setCharacters] = useState<Character[]>([
-    {
-      character_id: "1",
-      name: "Steve Lugar",
-      description: "You are a Private Detective straight out of a classic film noir or detective novel. You have walked these mean streets for a decade and have learned how to ask good questions and observe people's behavior.",
-      motivation: "You are down on your luck and willing to take any job that comes your way. No matter how much you need a job you won't tangle with the mob."
-    },
-    {
-      character_id: "2",
-      name: "Molly Chen",
-      description: "A mysterious client who arrives on a rainy evening with a case that seems too dangerous to take on.",
-      motivation: "Find out what happened to her missing sister before it's too late."
-    }
-  ]);
-  
+  const [characters, setCharacters] = useState<Character[]>([]);
   const [formOpen, setFormOpen] = useState(false);
   const [editingCharacter, setEditingCharacter] = useState<Character | undefined>();
-  const [isLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const { toast } = useToast();
+
+  const loadCharacters = async () => {
+    try {
+      setIsLoading(true);
+      const data = await apiClient.getCharacters();
+      setCharacters(data);
+    } catch (error) {
+      toast({
+        title: "Error loading characters",
+        description: error instanceof Error ? error.message : "Unknown error occurred",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadCharacters();
+  }, []);
 
   const handleEdit = (character: Character) => {
     setEditingCharacter(character);
@@ -36,29 +44,53 @@ export default function Characters() {
     setFormOpen(true);
   };
 
-  const handleSave = (characterData: Partial<Character>) => {
-    //todo: remove mock functionality
-    if (characterData.character_id) {
-      setCharacters(prev => prev.map(c => 
-        c.character_id === characterData.character_id 
-          ? { ...c, ...characterData } as Character
-          : c
-      ));
-    } else {
-      const newCharacter: Character = {
-        character_id: `char-${Date.now()}`,
-        name: characterData.name || "",
-        description: characterData.description || "",
-        motivation: characterData.motivation || ""
-      };
-      setCharacters(prev => [...prev, newCharacter]);
+  const handleSave = async (characterData: Partial<Character>) => {
+    try {
+      if (characterData.character_id) {
+        await apiClient.updateCharacter(characterData.character_id, characterData);
+        toast({
+          title: "Character updated",
+          description: "The character has been updated successfully.",
+        });
+      } else {
+        await apiClient.createCharacter({
+          name: characterData.name || "",
+          description: characterData.description || "",
+          motivation: characterData.motivation || "",
+        });
+        toast({
+          title: "Character created",
+          description: "The character has been created successfully.",
+        });
+      }
+      await loadCharacters();
+    } catch (error) {
+      toast({
+        title: "Error saving character",
+        description: error instanceof Error ? error.message : "Unknown error occurred",
+        variant: "destructive",
+      });
     }
   };
 
-  const handleDelete = (characterId: string) => {
-    //todo: remove mock functionality
-    if (confirm("Are you sure you want to delete this character?")) {
-      setCharacters(prev => prev.filter(c => c.character_id !== characterId));
+  const handleDelete = async (characterId: string) => {
+    if (!confirm("Are you sure you want to delete this character?")) {
+      return;
+    }
+
+    try {
+      await apiClient.deleteCharacter(characterId);
+      toast({
+        title: "Character deleted",
+        description: "The character has been deleted successfully.",
+      });
+      await loadCharacters();
+    } catch (error) {
+      toast({
+        title: "Error deleting character",
+        description: error instanceof Error ? error.message : "Unknown error occurred",
+        variant: "destructive",
+      });
     }
   };
 

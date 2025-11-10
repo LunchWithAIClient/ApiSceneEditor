@@ -1,31 +1,40 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Plus, Loader2 } from "lucide-react";
 import SceneCard from "@/components/SceneCard";
 import SceneForm from "@/components/SceneForm";
+import { apiClient } from "@/lib/lunchWithApi";
+import { useToast } from "@/hooks/use-toast";
 import type { Scene } from "@shared/api-types";
 
 export default function Scenes() {
   const [, setLocation] = useLocation();
-  
-  //todo: remove mock functionality
-  const [scenes, setScenes] = useState<Scene[]>([
-    {
-      scene_id: "1",
-      name: "The Detective's Office",
-      description: "You are in an office with a desk covered with the sports page of the newspaper. There are two chairs on the other side of the desk and a filing cabinet in the corner. On top of the filing cabinet is an old coffee machine. If it wasn't raining so hard you would open a window. The rain should have cooled things down but it's still hot."
-    },
-    {
-      scene_id: "2",
-      name: "The Restaurant",
-      description: "A dimly lit Italian restaurant with red checkered tablecloths. The smell of garlic and tomato sauce fills the air. In the corner, a piano player softly plays jazz standards."
-    }
-  ]);
-  
+  const [scenes, setScenes] = useState<Scene[]>([]);
   const [formOpen, setFormOpen] = useState(false);
   const [editingScene, setEditingScene] = useState<Scene | undefined>();
-  const [isLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const { toast } = useToast();
+
+  const loadScenes = async () => {
+    try {
+      setIsLoading(true);
+      const data = await apiClient.getScenes();
+      setScenes(data);
+    } catch (error) {
+      toast({
+        title: "Error loading scenes",
+        description: error instanceof Error ? error.message : "Unknown error occurred",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadScenes();
+  }, []);
 
   const handleView = (sceneId: string) => {
     setLocation(`/scenes/${sceneId}`);
@@ -41,28 +50,52 @@ export default function Scenes() {
     setFormOpen(true);
   };
 
-  const handleSave = (sceneData: Partial<Scene>) => {
-    //todo: remove mock functionality
-    if (sceneData.scene_id) {
-      setScenes(prev => prev.map(s => 
-        s.scene_id === sceneData.scene_id 
-          ? { ...s, ...sceneData } as Scene
-          : s
-      ));
-    } else {
-      const newScene: Scene = {
-        scene_id: `scene-${Date.now()}`,
-        name: sceneData.name || "",
-        description: sceneData.description || ""
-      };
-      setScenes(prev => [...prev, newScene]);
+  const handleSave = async (sceneData: Partial<Scene>) => {
+    try {
+      if (sceneData.scene_id) {
+        await apiClient.updateScene(sceneData.scene_id, sceneData);
+        toast({
+          title: "Scene updated",
+          description: "The scene has been updated successfully.",
+        });
+      } else {
+        await apiClient.createScene({
+          name: sceneData.name || "",
+          description: sceneData.description || "",
+        });
+        toast({
+          title: "Scene created",
+          description: "The scene has been created successfully.",
+        });
+      }
+      await loadScenes();
+    } catch (error) {
+      toast({
+        title: "Error saving scene",
+        description: error instanceof Error ? error.message : "Unknown error occurred",
+        variant: "destructive",
+      });
     }
   };
 
-  const handleDelete = (sceneId: string) => {
-    //todo: remove mock functionality
-    if (confirm("Are you sure you want to delete this scene?")) {
-      setScenes(prev => prev.filter(s => s.scene_id !== sceneId));
+  const handleDelete = async (sceneId: string) => {
+    if (!confirm("Are you sure you want to delete this scene?")) {
+      return;
+    }
+
+    try {
+      await apiClient.deleteScene(sceneId);
+      toast({
+        title: "Scene deleted",
+        description: "The scene has been deleted successfully.",
+      });
+      await loadScenes();
+    } catch (error) {
+      toast({
+        title: "Error deleting scene",
+        description: error instanceof Error ? error.message : "Unknown error occurred",
+        variant: "destructive",
+      });
     }
   };
 
