@@ -26,6 +26,9 @@ export default function SceneCard({
         <h3 className="text-lg font-medium" data-testid="text-scene-name">
           {scene.name}
         </h3>
+        <p className="text-sm text-muted-foreground" data-testid="text-scene-id">
+          ID: {scene.scene_id}
+        </p>
       </CardHeader>
       <CardContent>
         <p className="text-base line-clamp-3">{scene.description}</p>

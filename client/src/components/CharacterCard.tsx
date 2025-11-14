@@ -20,6 +20,9 @@ export default function CharacterCard({
         <h3 className="text-lg font-medium" data-testid="text-character-name">
           {character.name}
         </h3>
+        <p className="text-sm text-muted-foreground" data-testid="text-character-id">
+          ID: {character.character_id}
+        </p>
       </CardHeader>
       <CardContent className="space-y-2">
         <div>
