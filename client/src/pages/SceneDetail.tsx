@@ -158,9 +158,15 @@ export default function SceneDetail() {
               <h3 className="text-xl font-semibold">Scene Information</h3>
             </CardHeader>
             <CardContent>
-              <div className="space-y-2">
-                <p className="text-sm text-muted-foreground">Description</p>
-                <p className="text-base">{scene.description}</p>
+              <div className="space-y-4">
+                <div>
+                  <p className="text-sm text-muted-foreground">ID</p>
+                  <p className="text-xs font-mono">{scene.scene_id}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Description</p>
+                  <p className="text-base">{scene.description}</p>
+                </div>
               </div>
             </CardContent>
           </Card>

@@ -37,6 +37,10 @@ export default function CastItem({ cast, onEdit, onDelete }: CastItemProps) {
       </CardHeader>
       <CardContent className="space-y-2">
         <div>
+          <p className="text-sm text-muted-foreground">ID</p>
+          <p className="text-xs font-mono">{cast.cast_id}</p>
+        </div>
+        <div>
           <p className="text-sm text-muted-foreground">Goal</p>
           <p className="text-base">{cast.goal}</p>
         </div>

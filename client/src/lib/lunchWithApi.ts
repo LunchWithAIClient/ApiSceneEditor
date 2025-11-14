@@ -71,9 +71,15 @@ class LunchWithAPIClient {
       // For collection responses, return the results array
       const results = data.results;
       if (Array.isArray(results)) {
-        // If results is an array with one item and we're expecting a single object (PUT/POST),
-        // return just that item. Otherwise return the array (GET collection).
-        return (results.length === 1 && (method === 'PUT' || method === 'POST') 
+        // Check if this is a specific resource endpoint (has an ID in the path)
+        // by looking for patterns like /scene/{id}, /character/{id}, or /cast/{scene_id}/{cast_id}
+        const isSpecificResource = endpoint.match(/\/[a-f0-9-]{36}$/i);
+        
+        // If results is an array with one item and we're either:
+        // 1. Using PUT/POST methods, or
+        // 2. Getting a specific resource by ID
+        // Then return just that single item. Otherwise return the array.
+        return (results.length === 1 && (method === 'PUT' || method === 'POST' || isSpecificResource)
           ? results[0] 
           : results) as T;
       }
