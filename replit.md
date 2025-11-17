@@ -86,10 +86,15 @@ Preferred communication style: Simple, everyday language.
   - Raw API key authentication (no Bearer prefix) using user-provided key
   - API key stored in localStorage under `lunchwith_api_key`
   - Backend proxy at `/api/lunchwith/*` forwards requests to avoid browser CORS restrictions
-  - Endpoints for Characters, Scenes, and Cast management
+  - Endpoints for Characters, Scenes, Cast, and Stories management
   - API Operations: PUT (create), POST (update), GET (list/detail), DELETE (remove)
   - Response format: All responses wrapped in `{ results: [...], statusCode: 200, ...metadata }`
   - Frontend automatically unwraps `results` field for seamless integration
+  - **Story-specific operations:**
+    - Set start scene: POST `/story/{story_id}/start_scene/{scene_id}`
+    - Link character to cast: POST `/story/{story_id}/cast/{character_id}/as/{cast_id}`
+    - Get cast links: GET `/story/{story_id}/cast`
+    - Unlink character: DELETE `/story/{story_id}/cast/{cast_id}`
 
 **Database:**
 - **PostgreSQL** via Neon serverless driver (`@neondatabase/serverless`)
@@ -129,3 +134,41 @@ The application uses a backend proxy pattern where the frontend communicates wit
 - Backend proxy forwards to `https://api2.lunchwith.ai` with proper headers
 - Update operations (POST) exclude ID fields from request body (IDs only in URL path)
 - API responses are unwrapped from `{ results: [...] }` envelope automatically
+
+## Feature Overview
+
+### Characters Management
+- CRUD operations for character entities with name, description, and motivation
+- Search/filter by character name or ID
+- Duplicate functionality for quick character creation
+- Collapsible cards showing full details on demand
+
+### Scenes Management
+- CRUD operations for scene entities with name and description
+- Cast member management within each scene (role, goal)
+- Search/filter by scene name or ID
+- Duplicate functionality
+- Scene detail view with cast member list
+
+### Stories Management (Recently Added - Nov 2025)
+- CRUD operations for story entities with name and description
+- **Start Scene Selection:** Users can designate a scene as the story's starting point via dropdown selector
+- **Character Linking:** Links existing characters to cast members across all scenes
+  - Dual autocomplete UI: Select cast member (shows role, scene, goal) and character (shows name, description)
+  - Fetches all scenes and their cast members for discoverability
+  - Command component provides keyboard-friendly search
+- Search/filter by story name or ID
+- Duplicate functionality
+- Story detail view showing:
+  - Story information
+  - Start scene selector
+  - Character links with management (add/remove)
+  - Metadata sidebar
+
+**Character Linking Workflow:**
+1. User clicks "Link Character" button in story detail view
+2. Dialog opens and loads all cast members from all scenes
+3. User selects a cast member from searchable list (enriched with scene context)
+4. User selects a character from searchable list
+5. Link is created between character and cast member for this story
+6. Linked characters appear in the Character Links section with unlink option
