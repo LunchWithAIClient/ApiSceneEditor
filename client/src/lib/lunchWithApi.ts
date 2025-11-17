@@ -72,8 +72,19 @@ class LunchWithAPIClient {
       const results = data.results;
       if (Array.isArray(results)) {
         // Check if this is a specific resource endpoint (has an ID in the path)
-        // by looking for patterns like /scene/{id}, /character/{id}, or /cast/{scene_id}/{cast_id}
-        const isSpecificResource = endpoint.match(/\/[a-f0-9-]{36}$/i);
+        // Patterns:
+        // - /scene/{id} or /character/{id} = single resource
+        // - /cast/{scene_id}/{cast_id} = single cast member
+        // - /cast/{scene_id} = list of cast (NOT single resource)
+        const uuidPattern = /[a-f0-9-]{36}/gi;
+        const uuidMatches = endpoint.match(uuidPattern);
+        
+        // For cast endpoints: only treat as specific resource if there are TWO UUIDs
+        // For other endpoints: treat as specific resource if there's ONE UUID at the end
+        const isCastEndpoint = endpoint.includes('/cast/');
+        const isSpecificResource = isCastEndpoint 
+          ? (uuidMatches && uuidMatches.length === 2)
+          : endpoint.match(/\/[a-f0-9-]{36}$/i);
         
         // If results is an array with one item and we're either:
         // 1. Using PUT/POST methods, or
