@@ -157,7 +157,7 @@ class LunchWithAPIClient {
 
   // Story endpoints
   async getStories(): Promise<Story[]> {
-    return this.request<Story[]>("/story", "GET");
+    return this.request<Story[]>("/story/", "GET");
   }
 
   async getStory(storyId: string): Promise<Story> {
@@ -165,7 +165,7 @@ class LunchWithAPIClient {
   }
 
   async createStory(story: InsertStory): Promise<Story> {
-    return this.request<Story>("/story", "PUT", story);
+    return this.request<Story>("/story/", "PUT", story);
   }
 
   async updateStory(storyId: string, story: Partial<Story>): Promise<Story> {
