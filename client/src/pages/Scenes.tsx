@@ -1,7 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Plus, Loader2 } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Plus, Loader2, Search } from "lucide-react";
 import SceneCard from "@/components/SceneCard";
 import SceneForm from "@/components/SceneForm";
 import { apiClient } from "@/lib/lunchWithApi";
@@ -11,10 +12,22 @@ import type { Scene } from "@shared/api-types";
 export default function Scenes() {
   const [, setLocation] = useLocation();
   const [scenes, setScenes] = useState<Scene[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
   const [formOpen, setFormOpen] = useState(false);
   const [editingScene, setEditingScene] = useState<Scene | undefined>();
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
+
+  const filteredScenes = useMemo(() => {
+    if (!searchQuery.trim()) return scenes;
+    
+    const query = searchQuery.toLowerCase();
+    return scenes.filter(
+      (scene) =>
+        scene.name.toLowerCase().includes(query) ||
+        scene.scene_id.toLowerCase().includes(query)
+    );
+  }, [scenes, searchQuery]);
 
   const loadScenes = async () => {
     try {
@@ -101,6 +114,27 @@ export default function Scenes() {
     }
   };
 
+  const handleDuplicate = async (scene: Scene) => {
+    try {
+      // Create a copy with only the fields allowed by InsertScene
+      await apiClient.createScene({
+        name: `${scene.name} (Copy)`,
+        description: scene.description,
+      });
+      toast({
+        title: "Scene duplicated",
+        description: "The scene has been duplicated successfully.",
+      });
+      await loadScenes();
+    } catch (error) {
+      toast({
+        title: "Error duplicating scene",
+        description: error instanceof Error ? error.message : "Unknown error occurred",
+        variant: "destructive",
+      });
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -131,17 +165,40 @@ export default function Scenes() {
           </Button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {scenes.map((scene) => (
-            <SceneCard
-              key={scene.scene_id}
-              scene={scene}
-              onView={handleView}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
+        <>
+          <div className="relative mb-6">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder="Search by name or ID..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10"
+              data-testid="input-search-scenes"
             />
-          ))}
-        </div>
+          </div>
+
+          {filteredScenes.length === 0 ? (
+            <div className="text-center py-16">
+              <p className="text-lg font-medium mb-2">No scenes found</p>
+              <p className="text-sm text-muted-foreground">
+                Try adjusting your search query
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {filteredScenes.map((scene) => (
+                <SceneCard
+                  key={scene.scene_id}
+                  scene={scene}
+                  onView={handleView}
+                  onEdit={handleEdit}
+                  onDelete={handleDelete}
+                  onDuplicate={handleDuplicate}
+                />
+              ))}
+            </div>
+          )}
+        </>
       )}
 
       <SceneForm

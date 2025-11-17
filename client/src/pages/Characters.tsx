@@ -1,6 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
-import { Plus, Loader2 } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Plus, Loader2, Search } from "lucide-react";
 import CharacterCard from "@/components/CharacterCard";
 import CharacterForm from "@/components/CharacterForm";
 import { apiClient } from "@/lib/lunchWithApi";
@@ -9,10 +10,22 @@ import type { Character } from "@shared/api-types";
 
 export default function Characters() {
   const [characters, setCharacters] = useState<Character[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
   const [formOpen, setFormOpen] = useState(false);
   const [editingCharacter, setEditingCharacter] = useState<Character | undefined>();
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
+
+  const filteredCharacters = useMemo(() => {
+    if (!searchQuery.trim()) return characters;
+    
+    const query = searchQuery.toLowerCase();
+    return characters.filter(
+      (char) =>
+        char.name.toLowerCase().includes(query) ||
+        char.character_id.toLowerCase().includes(query)
+    );
+  }, [characters, searchQuery]);
 
   const loadCharacters = async () => {
     try {
@@ -96,6 +109,28 @@ export default function Characters() {
     }
   };
 
+  const handleDuplicate = async (character: Character) => {
+    try {
+      // Create a copy with only the fields allowed by InsertCharacter
+      await apiClient.createCharacter({
+        name: `${character.name} (Copy)`,
+        description: character.description,
+        motivation: character.motivation,
+      });
+      toast({
+        title: "Character duplicated",
+        description: "The character has been duplicated successfully.",
+      });
+      await loadCharacters();
+    } catch (error) {
+      toast({
+        title: "Error duplicating character",
+        description: error instanceof Error ? error.message : "Unknown error occurred",
+        variant: "destructive",
+      });
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -126,16 +161,39 @@ export default function Characters() {
           </Button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {characters.map((character) => (
-            <CharacterCard
-              key={character.character_id}
-              character={character}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
+        <>
+          <div className="relative mb-6">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder="Search by name or ID..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10"
+              data-testid="input-search-characters"
             />
-          ))}
-        </div>
+          </div>
+
+          {filteredCharacters.length === 0 ? (
+            <div className="text-center py-16">
+              <p className="text-lg font-medium mb-2">No characters found</p>
+              <p className="text-sm text-muted-foreground">
+                Try adjusting your search query
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {filteredCharacters.map((character) => (
+                <CharacterCard
+                  key={character.character_id}
+                  character={character}
+                  onEdit={handleEdit}
+                  onDelete={handleDelete}
+                  onDuplicate={handleDuplicate}
+                />
+              ))}
+            </div>
+          )}
+        </>
       )}
 
       <CharacterForm
