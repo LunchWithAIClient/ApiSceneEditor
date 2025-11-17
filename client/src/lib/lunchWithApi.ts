@@ -165,8 +165,11 @@ class LunchWithAPIClient {
   }
 
   async createStory(storyId: string, startSceneId: string, story: InsertStory): Promise<Story> {
-    // Create story by setting its start scene - this creates the story and sets start scene in one operation
-    const result = await this.request<Story>(`/story/${storyId}/start_scene/${startSceneId}`, "POST", story);
+    // Step 1: Create story by setting its start scene (POST with no body)
+    await this.request<Story>(`/story/${storyId}/start_scene/${startSceneId}`, "POST");
+    
+    // Step 2: Update the story with name and description
+    const result = await this.request<Story>(`/story/${storyId}`, "POST", story);
     return result;
   }
 
