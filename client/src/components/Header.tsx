@@ -33,6 +33,14 @@ export default function Header({ apiKey, onManageApiKey }: HeaderProps) {
                   Scenes
                 </Button>
               </Link>
+              <Link href="/stories">
+                <Button
+                  variant={location === "/stories" || location.startsWith("/stories/") ? "secondary" : "ghost"}
+                  data-testid="nav-stories"
+                >
+                  Stories
+                </Button>
+              </Link>
             </nav>
           </div>
           <Button
