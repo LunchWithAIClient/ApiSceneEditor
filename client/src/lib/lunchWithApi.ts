@@ -164,8 +164,10 @@ class LunchWithAPIClient {
     return this.request<Story>(`/story/${storyId}`, "GET");
   }
 
-  async createStory(story: InsertStory): Promise<Story> {
-    return this.request<Story>("/story/", "PUT", story);
+  async createStory(storyId: string, startSceneId: string, story: InsertStory): Promise<Story> {
+    // Create story by setting its start scene - this creates the story and sets start scene in one operation
+    const result = await this.request<Story>(`/story/${storyId}/start_scene/${startSceneId}`, "POST", story);
+    return result;
   }
 
   async updateStory(storyId: string, story: Partial<Story>): Promise<Story> {
@@ -182,8 +184,8 @@ class LunchWithAPIClient {
   }
 
   // Link a character to a cast member in a story
-  async linkCharacterToCast(storyId: string, castId: string, characterId: string): Promise<StoryCast> {
-    return this.request<StoryCast>(`/story/${storyId}/cast/${castId}/as/${characterId}`, "POST");
+  async linkCharacterToCast(storyId: string, characterId: string, castId: string): Promise<StoryCast> {
+    return this.request<StoryCast>(`/story/${storyId}/cast/${characterId}/as/${castId}`, "POST");
   }
 
   // Get all cast links for a story

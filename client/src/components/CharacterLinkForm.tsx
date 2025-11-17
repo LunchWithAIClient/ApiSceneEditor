@@ -34,7 +34,7 @@ interface CharacterLinkFormProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   characters: Character[];
-  onLink: (castId: string, characterId: string) => void;
+  onLink: (characterId: string, castId: string) => void;
 }
 
 export default function CharacterLinkForm({
@@ -88,7 +88,7 @@ export default function CharacterLinkForm({
 
   const handleLink = () => {
     if (selectedCastId && selectedCharacterId) {
-      onLink(selectedCastId, selectedCharacterId);
+      onLink(selectedCharacterId, selectedCastId);
       setSelectedCastId("");
       setSelectedCharacterId("");
     }

@@ -92,9 +92,9 @@ export default function StoryDetail() {
     }
   };
 
-  const handleLinkCharacter = async (castId: string, characterId: string) => {
+  const handleLinkCharacter = async (characterId: string, castId: string) => {
     try {
-      await apiClient.linkCharacterToCast(storyId, castId, characterId);
+      await apiClient.linkCharacterToCast(storyId, characterId, castId);
       toast({
         title: "Character linked",
         description: "The character has been linked to the cast successfully.",

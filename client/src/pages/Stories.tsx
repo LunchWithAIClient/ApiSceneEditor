@@ -63,7 +63,7 @@ export default function Stories() {
     setLocation(`/stories/${storyId}`);
   };
 
-  const handleSave = async (storyData: Partial<Story>) => {
+  const handleSave = async (storyData: Partial<Story> & { start_scene_id?: string }) => {
     try {
       if (storyData.story_id) {
         const { story_id, start_scene_id, ...updateData } = storyData;
@@ -73,7 +73,20 @@ export default function Stories() {
           description: "The story has been updated successfully.",
         });
       } else {
-        await apiClient.createStory({
+        // Generate UUID for new story
+        const storyId = crypto.randomUUID();
+        const startSceneId = storyData.start_scene_id;
+        
+        if (!startSceneId) {
+          toast({
+            title: "Start scene required",
+            description: "Please select a start scene for the story.",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        await apiClient.createStory(storyId, startSceneId, {
           name: storyData.name || "",
           description: storyData.description || "",
         });
@@ -115,7 +128,20 @@ export default function Stories() {
 
   const handleDuplicate = async (story: Story) => {
     try {
-      await apiClient.createStory({
+      // Generate UUID for duplicated story
+      const storyId = crypto.randomUUID();
+      
+      // Use the same start scene as the original if it exists
+      if (!story.start_scene_id) {
+        toast({
+          title: "Cannot duplicate",
+          description: "The original story has no start scene set.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      await apiClient.createStory(storyId, story.start_scene_id, {
         name: `${story.name} (Copy)`,
         description: story.description,
       });
