@@ -152,76 +152,56 @@ export default function SceneDetail() {
         <h2 className="text-3xl font-bold">{scene.name}</h2>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 space-y-8">
-          <Card>
-            <CardHeader>
-              <h3 className="text-xl font-semibold">Scene Information</h3>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <IdDisplay id={scene.scene_id} testId="text-scene-detail-id" />
-                <div>
-                  <p className="text-sm text-muted-foreground">Description</p>
-                  <p className="text-base">{scene.description}</p>
-                </div>
+      <div className="space-y-8">
+        <Card>
+          <CardHeader>
+            <h3 className="text-xl font-semibold">Scene Information</h3>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <IdDisplay id={scene.scene_id} testId="text-scene-detail-id" />
+              <div>
+                <p className="text-sm text-muted-foreground">Description</p>
+                <p className="text-base">{scene.description}</p>
               </div>
-            </CardContent>
-          </Card>
-
-          <div>
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-semibold">Cast Members</h3>
-              <Button onClick={handleAddCast} data-testid="button-add-cast">
-                <Plus className="w-4 h-4 mr-2" />
-                Add Cast Member
-              </Button>
             </div>
-
-            {castMembers.length === 0 ? (
-              <Card>
-                <CardContent className="text-center py-8">
-                  <p className="text-base mb-2">No cast members yet</p>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    Add cast members to bring this scene to life
-                  </p>
-                  <Button onClick={handleAddCast}>
-                    <Plus className="w-4 h-4 mr-2" />
-                    Add Cast Member
-                  </Button>
-                </CardContent>
-              </Card>
-            ) : (
-              <div className="space-y-4">
-                {castMembers.map((cast) => (
-                  <CastItem
-                    key={cast.cast_id}
-                    cast={cast}
-                    onEdit={handleEditCast}
-                    onDelete={handleDeleteCast}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
+          </CardContent>
+        </Card>
 
         <div>
-          <Card>
-            <CardHeader>
-              <h3 className="text-xl font-semibold">Scene Metadata</h3>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <p className="text-sm text-muted-foreground mb-1">Scene ID</p>
-                <IdDisplay id={scene.scene_id} label="" testId="text-scene-metadata-id" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground mb-1">Cast Count</p>
-                <p className="text-base">{castMembers.length} member{castMembers.length !== 1 ? 's' : ''}</p>
-              </div>
-            </CardContent>
-          </Card>
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-xl font-semibold">Cast Members</h3>
+            <Button onClick={handleAddCast} data-testid="button-add-cast">
+              <Plus className="w-4 h-4 mr-2" />
+              Add Cast Member
+            </Button>
+          </div>
+
+          {castMembers.length === 0 ? (
+            <Card>
+              <CardContent className="text-center py-8">
+                <p className="text-base mb-2">No cast members yet</p>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Add cast members to bring this scene to life
+                </p>
+                <Button onClick={handleAddCast}>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Cast Member
+                </Button>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-4">
+              {castMembers.map((cast) => (
+                <CastItem
+                  key={cast.cast_id}
+                  cast={cast}
+                  onEdit={handleEditCast}
+                  onDelete={handleDeleteCast}
+                />
+              ))}
+            </div>
+          )}
         </div>
       </div>
 

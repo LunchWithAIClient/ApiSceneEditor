@@ -12,6 +12,7 @@ import type { Scene } from "@shared/api-types";
 export default function Scenes() {
   const [, setLocation] = useLocation();
   const [scenes, setScenes] = useState<Scene[]>([]);
+  const [castMembersByScene, setCastMembersByScene] = useState<Record<string, any[]>>({});
   const [searchQuery, setSearchQuery] = useState("");
   const [formOpen, setFormOpen] = useState(false);
   const [editingScene, setEditingScene] = useState<Scene | undefined>();
@@ -34,6 +35,20 @@ export default function Scenes() {
       setIsLoading(true);
       const data = await apiClient.getScenes();
       setScenes(data);
+      
+      // Fetch cast members for all scenes
+      const castData: Record<string, any[]> = {};
+      await Promise.all(
+        data.map(async (scene) => {
+          try {
+            const cast = await apiClient.getCastMembers(scene.scene_id);
+            castData[scene.scene_id] = cast;
+          } catch (error) {
+            castData[scene.scene_id] = [];
+          }
+        })
+      );
+      setCastMembersByScene(castData);
     } catch (error) {
       toast({
         title: "Error loading scenes",
@@ -190,10 +205,8 @@ export default function Scenes() {
                 <SceneCard
                   key={scene.scene_id}
                   scene={scene}
+                  castMembers={castMembersByScene[scene.scene_id] || []}
                   onView={handleView}
-                  onEdit={handleEdit}
-                  onDelete={handleDelete}
-                  onDuplicate={handleDuplicate}
                 />
               ))}
             </div>
