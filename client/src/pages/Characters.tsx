@@ -186,9 +186,6 @@ export default function Characters() {
                 <CharacterCard
                   key={character.character_id}
                   character={character}
-                  onEdit={handleEdit}
-                  onDelete={handleDelete}
-                  onDuplicate={handleDuplicate}
                 />
               ))}
             </div>

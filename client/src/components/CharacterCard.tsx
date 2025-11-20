@@ -11,22 +11,16 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Edit, Trash2, Copy, ChevronDown } from "lucide-react";
+import { Eye, ChevronDown } from "lucide-react";
 import type { Character } from "@shared/api-types";
 import IdDisplay from "@/components/IdDisplay";
 
 interface CharacterCardProps {
   character: Character;
-  onEdit: (character: Character) => void;
-  onDelete: (characterId: string) => void;
-  onDuplicate: (character: Character) => void;
 }
 
 export default function CharacterCard({
   character,
-  onEdit,
-  onDelete,
-  onDuplicate,
 }: CharacterCardProps) {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -46,44 +40,14 @@ export default function CharacterCard({
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={() => onDuplicate(character)}
-                  data-testid="button-duplicate-character"
+                  onClick={() => setIsOpen(!isOpen)}
+                  data-testid="button-view-character"
                 >
-                  <Copy className="w-4 h-4" />
+                  <Eye className="w-4 h-4" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
-                <p>Duplicate character</p>
-              </TooltipContent>
-            </Tooltip>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => onEdit(character)}
-                  data-testid="button-edit-character"
-                >
-                  <Edit className="w-4 h-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Edit character</p>
-              </TooltipContent>
-            </Tooltip>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => onDelete(character.character_id)}
-                  data-testid="button-delete-character"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Delete character</p>
+                <p>View character</p>
               </TooltipContent>
             </Tooltip>
             <Tooltip>
