@@ -1,8 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRoute, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { ChevronLeft, Plus, Loader2, Edit, Trash2, Eye } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { ChevronLeft, Plus, Loader2, Edit, Trash2, Eye, Search } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -38,6 +39,7 @@ export default function SceneDetail() {
   const [, setLocation] = useLocation();
   const [scene, setScene] = useState<Scene | null>(null);
   const [castMembers, setCastMembers] = useState<Cast[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
   const [castFormOpen, setCastFormOpen] = useState(false);
   const [sceneFormOpen, setSceneFormOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -49,6 +51,18 @@ export default function SceneDetail() {
   const { toast } = useToast();
 
   const sceneId = params?.id || "";
+
+  const filteredCastMembers = useMemo(() => {
+    if (!searchQuery.trim()) return castMembers;
+    
+    const query = searchQuery.toLowerCase();
+    return castMembers.filter(
+      (cast) =>
+        (cast.role ?? "").toLowerCase().includes(query) ||
+        (cast.goal ?? "").toLowerCase().includes(query) ||
+        (cast.start ?? "").toLowerCase().includes(query)
+    );
+  }, [castMembers, searchQuery]);
 
   const loadScene = async () => {
     if (!sceneId) return;
@@ -321,16 +335,40 @@ export default function SceneDetail() {
               </CardContent>
             </Card>
           ) : (
-            <div className="space-y-4">
-              {castMembers.map((cast) => (
-                <CastItem
-                  key={cast.cast_id}
-                  cast={cast}
-                  onEdit={handleEditCast}
-                  onDelete={handleDeleteCast}
+            <>
+              <div className="relative mb-4">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search by any keyword..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10"
+                  data-testid="input-search-cast"
                 />
-              ))}
-            </div>
+              </div>
+
+              {filteredCastMembers.length === 0 ? (
+                <Card>
+                  <CardContent className="text-center py-8">
+                    <p className="text-base mb-2">No cast members found</p>
+                    <p className="text-sm text-muted-foreground">
+                      Try adjusting your search query
+                    </p>
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="space-y-4">
+                  {filteredCastMembers.map((cast) => (
+                    <CastItem
+                      key={cast.cast_id}
+                      cast={cast}
+                      onEdit={handleEditCast}
+                      onDelete={handleDeleteCast}
+                    />
+                  ))}
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>

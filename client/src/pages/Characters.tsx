@@ -22,8 +22,10 @@ export default function Characters() {
     const query = searchQuery.toLowerCase();
     return characters.filter(
       (char) =>
-        char.name.toLowerCase().includes(query) ||
-        char.character_id.toLowerCase().includes(query)
+        (char.name ?? "").toLowerCase().includes(query) ||
+        (char.character_id ?? "").toLowerCase().includes(query) ||
+        (char.description ?? "").toLowerCase().includes(query) ||
+        (char.motivation ?? "").toLowerCase().includes(query)
     );
   }, [characters, searchQuery]);
 
@@ -165,7 +167,7 @@ export default function Characters() {
           <div className="relative mb-6">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
-              placeholder="Search by name or ID..."
+              placeholder="Search by any keyword..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10"

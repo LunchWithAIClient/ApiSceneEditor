@@ -25,8 +25,9 @@ export default function Scenes() {
     const query = searchQuery.toLowerCase();
     return scenes.filter(
       (scene) =>
-        scene.name.toLowerCase().includes(query) ||
-        scene.scene_id.toLowerCase().includes(query)
+        (scene.name ?? "").toLowerCase().includes(query) ||
+        (scene.scene_id ?? "").toLowerCase().includes(query) ||
+        (scene.description ?? "").toLowerCase().includes(query)
     );
   }, [scenes, searchQuery]);
 
@@ -184,7 +185,7 @@ export default function Scenes() {
           <div className="relative mb-6">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
-              placeholder="Search by name or ID..."
+              placeholder="Search by any keyword..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10"
