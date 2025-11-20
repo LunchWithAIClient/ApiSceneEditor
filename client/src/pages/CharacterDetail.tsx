@@ -1,8 +1,13 @@
 import { useState, useEffect } from "react";
 import { useRoute, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { ChevronLeft, Edit, Trash2, Loader2 } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import CharacterForm from "@/components/CharacterForm";
 import { apiClient } from "@/lib/lunchWithApi";
 import { useToast } from "@/hooks/use-toast";
@@ -123,44 +128,58 @@ export default function CharacterDetail() {
           <ChevronLeft className="w-4 h-4 mr-2" />
           Back to Characters
         </Button>
-        <div className="flex items-center justify-between">
-          <h2 className="text-3xl font-bold">{character.name}</h2>
-          <div className="flex gap-2">
-            <Button
-              variant="default"
-              onClick={handleEdit}
-              data-testid="button-edit-character"
-            >
-              <Edit className="w-4 h-4 mr-2" />
-              Edit
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={handleDeleteClick}
-              data-testid="button-delete-character"
-            >
-              <Trash2 className="w-4 h-4 mr-2" />
-              Delete
-            </Button>
-          </div>
-        </div>
+        <h2 className="text-3xl font-bold">{character.name}</h2>
       </div>
 
       <div className="space-y-8">
         <Card>
-          <CardHeader>
-            <h3 className="text-xl font-semibold">Character Information</h3>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <IdDisplay id={character.character_id} testId="text-character-detail-id" />
+          <CardContent className="pt-6">
+            <div className="flex items-start justify-between gap-4 mb-3">
+              <h3 className="text-base font-semibold">Character Information</h3>
+              <div className="flex gap-1">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={handleEdit}
+                      className="h-7 w-7"
+                      data-testid="button-edit-character"
+                    >
+                      <Edit className="w-3.5 h-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Edit character</p>
+                  </TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={handleDeleteClick}
+                      className="h-7 w-7"
+                      data-testid="button-delete-character"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Delete character</p>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+            </div>
+            <div className="space-y-1.5 text-sm">
+              <IdDisplay id={character.character_id} label="ID" testId="text-character-detail-id" />
               <div>
-                <p className="text-sm text-muted-foreground">Description</p>
-                <p className="text-base">{character.description}</p>
+                <span className="text-muted-foreground">Description </span>
+                <span className="text-foreground line-clamp-2">{character.description}</span>
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Motivation</p>
-                <p className="text-base">{character.motivation}</p>
+                <span className="text-muted-foreground">Motivation </span>
+                <span className="text-foreground line-clamp-2">{character.motivation}</span>
               </div>
             </div>
           </CardContent>
