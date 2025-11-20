@@ -48,6 +48,7 @@ export default function App() {
   const handleSaveApiKey = (key: string) => {
     setApiKey(key);
     apiClient.setApiKey(key);
+    window.location.reload();
   };
 
   return (
