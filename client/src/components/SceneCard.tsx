@@ -134,7 +134,7 @@ function CastMemberDisplay({ cast }: { cast: Cast }) {
   };
 
   return (
-    <div className="flex items-center gap-1" data-testid={`cast-member-${cast.cast_id}`}>
+    <div className="flex items-center gap-1 text-xs" data-testid={`cast-member-${cast.cast_id}`}>
       <Tooltip>
         <TooltipTrigger asChild>
           <Button
@@ -155,9 +155,8 @@ function CastMemberDisplay({ cast }: { cast: Cast }) {
           <p>{copied ? "Copied!" : "Copy cast ID"}</p>
         </TooltipContent>
       </Tooltip>
-      <span className="text-xs text-muted-foreground font-mono">
-        {cast.role} - {cast.cast_id}
-      </span>
+      <span className="text-foreground">{cast.role}:</span>
+      <span className="text-muted-foreground font-mono truncate">{cast.cast_id}</span>
     </div>
   );
 }
