@@ -18,52 +18,56 @@ interface CastItemProps {
 export default function CastItem({ cast, onEdit, onDelete }: CastItemProps) {
   return (
     <Card data-testid={`card-cast-${cast.cast_id}`}>
-      <CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0 pb-2">
-        <h4 className="text-lg font-medium" data-testid="text-cast-role">
-          {cast.role}
-        </h4>
-        <div className="flex gap-2">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => onEdit(cast)}
-                data-testid="button-edit-cast"
-              >
-                <Edit className="w-4 h-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Edit cast member</p>
-            </TooltipContent>
-          </Tooltip>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => onDelete(cast.cast_id)}
-                data-testid="button-delete-cast"
-              >
-                <Trash2 className="w-4 h-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Delete cast member</p>
-            </TooltipContent>
-          </Tooltip>
+      <CardContent className="pt-6">
+        <div className="flex items-start justify-between gap-4 mb-3">
+          <h4 className="text-base font-medium" data-testid="text-cast-role">
+            {cast.role}
+          </h4>
+          <div className="flex gap-1">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => onEdit(cast)}
+                  className="h-7 w-7"
+                  data-testid="button-edit-cast"
+                >
+                  <Edit className="w-3.5 h-3.5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Edit cast member</p>
+              </TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => onDelete(cast.cast_id)}
+                  className="h-7 w-7"
+                  data-testid="button-delete-cast"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Delete cast member</p>
+              </TooltipContent>
+            </Tooltip>
+          </div>
         </div>
-      </CardHeader>
-      <CardContent className="space-y-2">
-        <IdDisplay id={cast.cast_id} testId="text-cast-id" />
-        <div>
-          <p className="text-sm text-muted-foreground">Goal</p>
-          <p className="text-base">{cast.goal}</p>
-        </div>
-        <div>
-          <p className="text-sm text-muted-foreground">Start</p>
-          <p className="text-base">{cast.start}</p>
+        <div className="space-y-1.5 text-sm">
+          <IdDisplay id={cast.cast_id} label="ID" testId="text-cast-id" />
+          <div>
+            <span className="text-muted-foreground">Goal </span>
+            <span className="text-foreground">{cast.goal}</span>
+          </div>
+          <div>
+            <span className="text-muted-foreground">Start </span>
+            <span className="text-foreground">{cast.start}</span>
+          </div>
         </div>
       </CardContent>
     </Card>
