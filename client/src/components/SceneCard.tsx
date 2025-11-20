@@ -29,7 +29,7 @@ export default function SceneCard({
 }: SceneCardProps) {
   const [isOpen, setIsOpen] = useState(false);
 
-  const truncateText = (text: string, maxLength: number = 60) => {
+  const truncateText = (text: string, maxLength: number = 50) => {
     if (text.length <= maxLength) return text;
     return text.substring(0, maxLength) + "...";
   };
@@ -37,13 +37,54 @@ export default function SceneCard({
   return (
     <Card data-testid={`card-scene-${scene.scene_id}`}>
       <Collapsible open={isOpen} onOpenChange={setIsOpen}>
-        <CardHeader className="flex flex-row items-start justify-between gap-4 space-y-0 pb-3">
-          <div className="flex-1 min-w-0">
-            <h3 className="text-lg font-medium mb-1" data-testid="text-scene-name">
+        <CardContent className="pt-6">
+          <div className="flex items-start justify-between gap-4 mb-3">
+            <h3 className="text-base font-medium" data-testid="text-scene-name">
               {scene.name}
             </h3>
-            <IdDisplay id={scene.scene_id} testId="text-scene-id" />
-            <div className="mt-2 text-sm">
+            <div className="flex gap-1">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => onView(scene.scene_id)}
+                    className="h-7 w-7"
+                    data-testid="button-view-scene"
+                  >
+                    <Eye className="w-3.5 h-3.5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>View scene details</p>
+                </TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <CollapsibleTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7"
+                      data-testid="button-toggle-scene"
+                    >
+                      <ChevronDown
+                        className={`w-3.5 h-3.5 transition-transform ${
+                          isOpen ? "rotate-180" : ""
+                        }`}
+                      />
+                    </Button>
+                  </CollapsibleTrigger>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>{isOpen ? "Collapse details" : "Expand details"}</p>
+                </TooltipContent>
+              </Tooltip>
+            </div>
+          </div>
+          <div className="space-y-1.5 text-sm">
+            <IdDisplay id={scene.scene_id} label="ID" testId="text-scene-id" />
+            <div className="truncate">
               <span className="text-muted-foreground">Description </span>
               <span className="text-foreground">{truncateText(scene.description)}</span>
             </div>
@@ -58,52 +99,13 @@ export default function SceneCard({
               </div>
             )}
           </div>
-          <div className="flex items-center gap-2">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => onView(scene.scene_id)}
-                  data-testid="button-view-scene"
-                >
-                  <Eye className="w-4 h-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>View scene details</p>
-              </TooltipContent>
-            </Tooltip>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <CollapsibleTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    data-testid="button-toggle-scene"
-                  >
-                    <ChevronDown
-                      className={`w-4 h-4 transition-transform ${
-                        isOpen ? "rotate-180" : ""
-                      }`}
-                    />
-                  </Button>
-                </CollapsibleTrigger>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>{isOpen ? "Collapse details" : "Expand details"}</p>
-              </TooltipContent>
-            </Tooltip>
-          </div>
-        </CardHeader>
-        <CollapsibleContent>
-          <CardContent className="pt-0">
-            <div>
+          <CollapsibleContent>
+            <div className="mt-3 pt-3 border-t">
               <p className="text-sm text-muted-foreground mb-1">Full Description</p>
-              <p className="text-base">{scene.description}</p>
+              <p className="text-sm">{scene.description}</p>
             </div>
-          </CardContent>
-        </CollapsibleContent>
+          </CollapsibleContent>
+        </CardContent>
       </Collapsible>
     </Card>
   );
