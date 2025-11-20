@@ -2,13 +2,24 @@ import { useState, useEffect } from "react";
 import { useRoute, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { ChevronLeft, Plus, Loader2 } from "lucide-react";
+import { ChevronLeft, Plus, Loader2, Edit, Trash2 } from "lucide-react";
 import CastItem from "@/components/CastItem";
 import CastForm from "@/components/CastForm";
+import SceneForm from "@/components/SceneForm";
 import { apiClient } from "@/lib/lunchWithApi";
 import { useToast } from "@/hooks/use-toast";
 import type { Scene, Cast } from "@shared/api-types";
 import IdDisplay from "@/components/IdDisplay";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export default function SceneDetail() {
   const [, params] = useRoute("/scenes/:id");
@@ -16,6 +27,8 @@ export default function SceneDetail() {
   const [scene, setScene] = useState<Scene | null>(null);
   const [castMembers, setCastMembers] = useState<Cast[]>([]);
   const [castFormOpen, setCastFormOpen] = useState(false);
+  const [sceneFormOpen, setSceneFormOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [editingCast, setEditingCast] = useState<Cast | undefined>();
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
@@ -64,6 +77,53 @@ export default function SceneDetail() {
 
   const handleBack = () => {
     setLocation("/scenes");
+  };
+
+  const handleEditScene = () => {
+    setSceneFormOpen(true);
+  };
+
+  const handleSaveScene = async (sceneData: Partial<Scene>) => {
+    try {
+      if (sceneData.scene_id) {
+        const { scene_id, ...updateData } = sceneData;
+        await apiClient.updateScene(scene_id, updateData);
+        toast({
+          title: "Scene updated",
+          description: "The scene has been updated successfully.",
+        });
+        await loadScene();
+      }
+    } catch (error) {
+      toast({
+        title: "Error updating scene",
+        description: error instanceof Error ? error.message : "Unknown error occurred",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteClick = () => {
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!scene) return;
+
+    try {
+      await apiClient.deleteScene(scene.scene_id);
+      toast({
+        title: "Scene deleted",
+        description: "The scene has been deleted successfully.",
+      });
+      setLocation("/scenes");
+    } catch (error) {
+      toast({
+        title: "Error deleting scene",
+        description: error instanceof Error ? error.message : "Unknown error occurred",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleAddCast = () => {
@@ -149,7 +209,27 @@ export default function SceneDetail() {
           <ChevronLeft className="w-4 h-4 mr-2" />
           Back to Scenes
         </Button>
-        <h2 className="text-3xl font-bold">{scene.name}</h2>
+        <div className="flex items-center justify-between">
+          <h2 className="text-3xl font-bold">{scene.name}</h2>
+          <div className="flex gap-2">
+            <Button
+              variant="default"
+              onClick={handleEditScene}
+              data-testid="button-edit-scene"
+            >
+              <Edit className="w-4 h-4 mr-2" />
+              Edit
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDeleteClick}
+              data-testid="button-delete-scene"
+            >
+              <Trash2 className="w-4 h-4 mr-2" />
+              Delete
+            </Button>
+          </div>
+        </div>
       </div>
 
       <div className="space-y-8">
@@ -212,6 +292,34 @@ export default function SceneDetail() {
         cast={editingCast}
         onSave={handleSaveCast}
       />
+
+      <SceneForm
+        open={sceneFormOpen}
+        onOpenChange={setSceneFormOpen}
+        scene={scene}
+        onSave={handleSaveScene}
+      />
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent data-testid="dialog-confirm-delete">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirm Delete</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete "{scene.name}"? This action cannot be undone and will also delete all associated cast members.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel data-testid="button-cancel-delete">Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteConfirm}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              data-testid="button-confirm-delete"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
