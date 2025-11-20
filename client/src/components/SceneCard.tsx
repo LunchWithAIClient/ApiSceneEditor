@@ -29,6 +29,11 @@ export default function SceneCard({
 }: SceneCardProps) {
   const [isOpen, setIsOpen] = useState(false);
 
+  const truncateText = (text: string, maxLength: number = 60) => {
+    if (text.length <= maxLength) return text;
+    return text.substring(0, maxLength) + "...";
+  };
+
   return (
     <Card data-testid={`card-scene-${scene.scene_id}`}>
       <Collapsible open={isOpen} onOpenChange={setIsOpen}>
@@ -38,6 +43,10 @@ export default function SceneCard({
               {scene.name}
             </h3>
             <IdDisplay id={scene.scene_id} testId="text-scene-id" />
+            <div className="mt-2 text-sm">
+              <span className="text-muted-foreground">Description </span>
+              <span className="text-foreground">{truncateText(scene.description)}</span>
+            </div>
             {castMembers.length > 0 && (
               <div className="mt-2 space-y-1">
                 {castMembers.map((cast) => (
@@ -90,7 +99,7 @@ export default function SceneCard({
         <CollapsibleContent>
           <CardContent className="pt-0">
             <div>
-              <p className="text-sm text-muted-foreground mb-1">Description</p>
+              <p className="text-sm text-muted-foreground mb-1">Full Description</p>
               <p className="text-base">{scene.description}</p>
             </div>
           </CardContent>
