@@ -2,7 +2,14 @@ import { useState, useEffect } from "react";
 import { useRoute, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { ChevronLeft, Plus, Loader2, Edit, Trash2 } from "lucide-react";
+import { ChevronLeft, Plus, Loader2, Edit, Trash2, Eye } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   Tooltip,
   TooltipContent,
@@ -34,6 +41,7 @@ export default function SceneDetail() {
   const [castFormOpen, setCastFormOpen] = useState(false);
   const [sceneFormOpen, setSceneFormOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [showFullInfo, setShowFullInfo] = useState(false);
   const [editingCast, setEditingCast] = useState<Cast | undefined>();
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
@@ -214,54 +222,70 @@ export default function SceneDetail() {
           <ChevronLeft className="w-4 h-4 mr-2" />
           Back to Scenes
         </Button>
-        <div className="flex items-center justify-between">
-          <h2 className="text-3xl font-bold">{scene.name}</h2>
-          <div className="flex gap-2">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={handleEditScene}
-                  data-testid="button-edit-scene"
-                >
-                  <Edit className="w-4 h-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Edit scene</p>
-              </TooltipContent>
-            </Tooltip>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={handleDeleteClick}
-                  data-testid="button-delete-scene"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Delete scene</p>
-              </TooltipContent>
-            </Tooltip>
-          </div>
-        </div>
+        <h2 className="text-3xl font-bold">{scene.name}</h2>
       </div>
 
       <div className="space-y-8">
         <Card>
-          <CardHeader>
-            <h3 className="text-xl font-semibold">Scene Information</h3>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <IdDisplay id={scene.scene_id} testId="text-scene-detail-id" />
+          <CardContent className="pt-6">
+            <div className="flex items-start justify-between gap-4 mb-3">
+              <h3 className="text-base font-semibold">Scene Information</h3>
+              <div className="flex gap-1">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setShowFullInfo(true)}
+                      className="h-7 w-7"
+                      data-testid="button-view-scene-info"
+                    >
+                      <Eye className="w-3.5 h-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>View full information</p>
+                  </TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={handleEditScene}
+                      className="h-7 w-7"
+                      data-testid="button-edit-scene-info"
+                    >
+                      <Edit className="w-3.5 h-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Edit scene</p>
+                  </TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={handleDeleteClick}
+                      className="h-7 w-7"
+                      data-testid="button-delete-scene-info"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Delete scene</p>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+            </div>
+            <div className="space-y-1.5 text-sm">
+              <IdDisplay id={scene.scene_id} label="ID" testId="text-scene-detail-id" />
               <div>
-                <p className="text-sm text-muted-foreground">Description</p>
-                <p className="text-base">{scene.description}</p>
+                <span className="text-muted-foreground">Description </span>
+                <span className="text-foreground line-clamp-2">{scene.description}</span>
               </div>
             </div>
           </CardContent>
@@ -318,6 +342,25 @@ export default function SceneDetail() {
         scene={scene}
         onSave={handleSaveScene}
       />
+
+      <Dialog open={showFullInfo} onOpenChange={setShowFullInfo}>
+        <DialogContent data-testid="dialog-scene-info">
+          <DialogHeader>
+            <DialogTitle>Scene Information</DialogTitle>
+            <DialogDescription>Complete scene details</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <p className="text-sm font-medium text-muted-foreground mb-1">ID</p>
+              <p className="text-sm font-mono">{scene.scene_id}</p>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-muted-foreground mb-1">Description</p>
+              <p className="text-sm">{scene.description}</p>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent data-testid="dialog-confirm-delete">
