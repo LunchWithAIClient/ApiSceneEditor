@@ -41,6 +41,8 @@ export default function SceneDetail() {
   const [castFormOpen, setCastFormOpen] = useState(false);
   const [sceneFormOpen, setSceneFormOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleteCastDialogOpen, setDeleteCastDialogOpen] = useState(false);
+  const [deletingCastId, setDeletingCastId] = useState<string | null>(null);
   const [showFullInfo, setShowFullInfo] = useState(false);
   const [editingCast, setEditingCast] = useState<Cast | undefined>();
   const [isLoading, setIsLoading] = useState(true);
@@ -181,18 +183,23 @@ export default function SceneDetail() {
     }
   };
 
-  const handleDeleteCast = async (castId: string) => {
-    if (!confirm("Are you sure you want to delete this cast member?")) {
-      return;
-    }
+  const handleDeleteCast = (castId: string) => {
+    setDeletingCastId(castId);
+    setDeleteCastDialogOpen(true);
+  };
+
+  const handleDeleteCastConfirm = async () => {
+    if (!deletingCastId) return;
 
     try {
-      await apiClient.deleteCast(sceneId, castId);
+      await apiClient.deleteCast(sceneId, deletingCastId);
       toast({
         title: "Cast member deleted",
         description: "The cast member has been deleted successfully.",
       });
       await loadCastMembers();
+      setDeleteCastDialogOpen(false);
+      setDeletingCastId(null);
     } catch (error) {
       toast({
         title: "Error deleting cast member",
@@ -376,6 +383,27 @@ export default function SceneDetail() {
               onClick={handleDeleteConfirm}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               data-testid="button-confirm-delete"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={deleteCastDialogOpen} onOpenChange={setDeleteCastDialogOpen}>
+        <AlertDialogContent data-testid="dialog-confirm-delete-cast">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirm Delete</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this cast member? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel data-testid="button-cancel-delete-cast">Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteCastConfirm}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              data-testid="button-confirm-delete-cast"
             >
               Delete
             </AlertDialogAction>
