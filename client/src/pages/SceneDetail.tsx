@@ -3,6 +3,11 @@ import { useRoute, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { ChevronLeft, Plus, Loader2, Edit, Trash2 } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import CastItem from "@/components/CastItem";
 import CastForm from "@/components/CastForm";
 import SceneForm from "@/components/SceneForm";
@@ -212,22 +217,36 @@ export default function SceneDetail() {
         <div className="flex items-center justify-between">
           <h2 className="text-3xl font-bold">{scene.name}</h2>
           <div className="flex gap-2">
-            <Button
-              variant="default"
-              onClick={handleEditScene}
-              data-testid="button-edit-scene"
-            >
-              <Edit className="w-4 h-4 mr-2" />
-              Edit
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={handleDeleteClick}
-              data-testid="button-delete-scene"
-            >
-              <Trash2 className="w-4 h-4 mr-2" />
-              Delete
-            </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={handleEditScene}
+                  data-testid="button-edit-scene"
+                >
+                  <Edit className="w-4 h-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Edit scene</p>
+              </TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={handleDeleteClick}
+                  data-testid="button-delete-scene"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Delete scene</p>
+              </TooltipContent>
+            </Tooltip>
           </div>
         </div>
       </div>
