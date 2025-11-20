@@ -50,7 +50,7 @@ export default function App() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
+      <TooltipProvider delayDuration={0}>
         <div className="min-h-screen bg-background">
           <Header 
             apiKey={apiKey} 
