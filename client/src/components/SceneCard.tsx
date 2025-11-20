@@ -83,7 +83,7 @@ export default function SceneCard({
             </div>
           </div>
           <div className="space-y-1.5 text-sm">
-            <IdDisplay id={scene.scene_id} label="ID" testId="text-scene-id" />
+            <IdDisplay id={scene.scene_id} label="Scene ID" testId="text-scene-id" />
             <div className="truncate">
               <span className="text-muted-foreground">Description </span>
               <span className="text-foreground">{truncateText(scene.description)}</span>
