@@ -9,8 +9,6 @@ import APIKeyDialog from "@/components/APIKeyDialog";
 import Characters from "@/pages/Characters";
 import Scenes from "@/pages/Scenes";
 import SceneDetail from "@/pages/SceneDetail";
-import Stories from "@/pages/Stories";
-import StoryDetail from "@/pages/StoryDetail";
 import { apiClient } from "@/lib/lunchWithApi";
 
 function Router() {
@@ -19,8 +17,6 @@ function Router() {
       <Route path="/" component={Characters} />
       <Route path="/scenes" component={Scenes} />
       <Route path="/scenes/:id" component={SceneDetail} />
-      <Route path="/stories" component={Stories} />
-      <Route path="/stories/:id" component={StoryDetail} />
       <Route>
         <div className="flex items-center justify-center h-screen">
           <div className="text-center">

@@ -1,4 +1,4 @@
-import type { Character, Scene, Cast, Story, StoryCast, InsertCharacter, InsertScene, InsertCast, InsertStory } from "@shared/api-types";
+import type { Character, Scene, Cast, InsertCharacter, InsertScene, InsertCast } from "@shared/api-types";
 
 // Use backend proxy to avoid CORS issues in the browser
 const API_BASE_URL = "/api/lunchwith";
@@ -153,52 +153,6 @@ class LunchWithAPIClient {
 
   async deleteCast(sceneId: string, castId: string): Promise<void> {
     return this.request<void>(`/cast/${sceneId}/${castId}`, "DELETE");
-  }
-
-  // Story endpoints
-  async getStories(): Promise<Story[]> {
-    return this.request<Story[]>("/story/", "GET");
-  }
-
-  async getStory(storyId: string): Promise<Story> {
-    return this.request<Story>(`/story/${storyId}`, "GET");
-  }
-
-  async createStory(storyId: string, startSceneId: string, story: InsertStory): Promise<Story> {
-    // Step 1: Create story by setting its start scene (POST with no body)
-    await this.request<Story>(`/story/${storyId}/start_scene/${startSceneId}`, "POST");
-    
-    // Step 2: Update the story with name and description
-    const result = await this.request<Story>(`/story/${storyId}`, "POST", story);
-    return result;
-  }
-
-  async updateStory(storyId: string, story: Partial<Story>): Promise<Story> {
-    return this.request<Story>(`/story/${storyId}`, "POST", story);
-  }
-
-  async deleteStory(storyId: string): Promise<void> {
-    return this.request<void>(`/story/${storyId}`, "DELETE");
-  }
-
-  // Set start scene for a story
-  async setStoryStartScene(storyId: string, sceneId: string): Promise<Story> {
-    return this.request<Story>(`/story/${storyId}/start_scene/${sceneId}`, "POST");
-  }
-
-  // Link a character to a cast member in a story
-  async linkCharacterToCast(storyId: string, characterId: string, castId: string): Promise<StoryCast> {
-    return this.request<StoryCast>(`/story/${storyId}/cast/${characterId}/as/${castId}`, "POST");
-  }
-
-  // Get all cast links for a story
-  async getStoryCastLinks(storyId: string): Promise<StoryCast[]> {
-    return this.request<StoryCast[]>(`/story/${storyId}/cast`, "GET");
-  }
-
-  // Remove a character from a story cast
-  async unlinkCharacterFromCast(storyId: string, castId: string): Promise<void> {
-    return this.request<void>(`/story/${storyId}/cast/${castId}`, "DELETE");
   }
 }
 
