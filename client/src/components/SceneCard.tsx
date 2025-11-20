@@ -156,7 +156,7 @@ function CastMemberDisplay({ cast }: { cast: Cast }) {
         </TooltipContent>
       </Tooltip>
       <span className="text-foreground">{cast.role}:</span>
-      <span className="text-muted-foreground font-mono truncate">{cast.cast_id}</span>
+      <span className="text-muted-foreground font-mono">{cast.cast_id}</span>
     </div>
   );
 }
