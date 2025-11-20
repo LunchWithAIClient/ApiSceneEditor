@@ -7,6 +7,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import Header from "@/components/Header";
 import APIKeyDialog from "@/components/APIKeyDialog";
 import Characters from "@/pages/Characters";
+import CharacterDetail from "@/pages/CharacterDetail";
 import Scenes from "@/pages/Scenes";
 import SceneDetail from "@/pages/SceneDetail";
 import { apiClient } from "@/lib/lunchWithApi";
@@ -16,6 +17,7 @@ function Router() {
     <Switch>
       <Route path="/" component={Characters} />
       <Route path="/characters" component={Characters} />
+      <Route path="/characters/:id" component={CharacterDetail} />
       <Route path="/scenes" component={Scenes} />
       <Route path="/scenes/:id" component={SceneDetail} />
       <Route>

@@ -105,6 +105,10 @@ class LunchWithAPIClient {
     return this.request<Character[]>("/character/", "GET");
   }
 
+  async getCharacter(characterId: string): Promise<Character> {
+    return this.request<Character>(`/character/${characterId}`, "GET");
+  }
+
   async createCharacter(character: InsertCharacter): Promise<Character> {
     return this.request<Character>("/character/", "PUT", character);
   }

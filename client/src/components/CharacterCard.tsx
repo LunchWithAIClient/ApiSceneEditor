@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -23,6 +24,7 @@ export default function CharacterCard({
   character,
 }: CharacterCardProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [, setLocation] = useLocation();
 
   return (
     <Card data-testid={`card-character-${character.character_id}`}>
@@ -40,14 +42,14 @@ export default function CharacterCard({
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={() => setIsOpen(!isOpen)}
+                  onClick={() => setLocation(`/characters/${character.character_id}`)}
                   data-testid="button-view-character"
                 >
                   <Eye className="w-4 h-4" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
-                <p>View character</p>
+                <p>View character details</p>
               </TooltipContent>
             </Tooltip>
             <Tooltip>
