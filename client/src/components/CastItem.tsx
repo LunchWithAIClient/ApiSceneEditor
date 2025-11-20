@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Edit, Trash2 } from "lucide-react";
 import type { Cast } from "@shared/api-types";
+import IdDisplay from "@/components/IdDisplay";
 
 interface CastItemProps {
   cast: Cast;
@@ -36,9 +37,7 @@ export default function CastItem({ cast, onEdit, onDelete }: CastItemProps) {
         </div>
       </CardHeader>
       <CardContent className="space-y-2">
-        <p className="text-sm text-muted-foreground">
-          ID: <span className="text-xs font-mono">{cast.cast_id}</span>
-        </p>
+        <IdDisplay id={cast.cast_id} testId="text-cast-id" />
         <div>
           <p className="text-sm text-muted-foreground">Goal</p>
           <p className="text-base">{cast.goal}</p>

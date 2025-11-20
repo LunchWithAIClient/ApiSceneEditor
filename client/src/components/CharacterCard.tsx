@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/collapsible";
 import { Edit, Trash2, Copy, ChevronDown } from "lucide-react";
 import type { Character } from "@shared/api-types";
+import IdDisplay from "@/components/IdDisplay";
 
 interface CharacterCardProps {
   character: Character;
@@ -32,9 +33,7 @@ export default function CharacterCard({
             <h3 className="text-lg font-medium mb-1" data-testid="text-character-name">
               {character.name}
             </h3>
-            <p className="text-xs text-muted-foreground font-mono" data-testid="text-character-id">
-              ID: {character.character_id}
-            </p>
+            <IdDisplay id={character.character_id} testId="text-character-id" />
           </div>
           <div className="flex items-center gap-2">
             <Button

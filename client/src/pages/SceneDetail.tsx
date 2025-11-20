@@ -8,6 +8,7 @@ import CastForm from "@/components/CastForm";
 import { apiClient } from "@/lib/lunchWithApi";
 import { useToast } from "@/hooks/use-toast";
 import type { Scene, Cast } from "@shared/api-types";
+import IdDisplay from "@/components/IdDisplay";
 
 export default function SceneDetail() {
   const [, params] = useRoute("/scenes/:id");
@@ -159,9 +160,7 @@ export default function SceneDetail() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                <p className="text-sm text-muted-foreground">
-                  ID: <span className="text-xs font-mono">{scene.scene_id}</span>
-                </p>
+                <IdDisplay id={scene.scene_id} testId="text-scene-detail-id" />
                 <div>
                   <p className="text-sm text-muted-foreground">Description</p>
                   <p className="text-base">{scene.description}</p>
@@ -215,7 +214,7 @@ export default function SceneDetail() {
             <CardContent className="space-y-4">
               <div>
                 <p className="text-sm text-muted-foreground mb-1">Scene ID</p>
-                <p className="text-xs font-mono">{scene.scene_id}</p>
+                <IdDisplay id={scene.scene_id} label="" testId="text-scene-metadata-id" />
               </div>
               <div>
                 <p className="text-sm text-muted-foreground mb-1">Cast Count</p>

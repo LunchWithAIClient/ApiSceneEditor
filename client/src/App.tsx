@@ -15,6 +15,7 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={Characters} />
+      <Route path="/characters" component={Characters} />
       <Route path="/scenes" component={Scenes} />
       <Route path="/scenes/:id" component={SceneDetail} />
       <Route>

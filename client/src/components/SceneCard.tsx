@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/collapsible";
 import { Edit, Trash2, Copy, ChevronDown, Eye } from "lucide-react";
 import type { Scene } from "@shared/api-types";
+import IdDisplay from "@/components/IdDisplay";
 
 interface SceneCardProps {
   scene: Scene;
@@ -34,9 +35,7 @@ export default function SceneCard({
             <h3 className="text-lg font-medium mb-1" data-testid="text-scene-name">
               {scene.name}
             </h3>
-            <p className="text-xs text-muted-foreground font-mono" data-testid="text-scene-id">
-              ID: {scene.scene_id}
-            </p>
+            <IdDisplay id={scene.scene_id} testId="text-scene-id" />
           </div>
           <div className="flex items-center gap-2">
             <Button
