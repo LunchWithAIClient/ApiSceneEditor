@@ -1,5 +1,10 @@
 import { Copy, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -34,19 +39,26 @@ export default function IdDisplay({ id, label = "ID", testId, className = "" }: 
 
   return (
     <div className={`flex items-center gap-1 ${className}`} data-testid={testId}>
-      <Button
-        variant="ghost"
-        size="icon"
-        onClick={handleCopy}
-        className="h-5 w-5 shrink-0"
-        data-testid={`button-copy-${testId}`}
-      >
-        {copied ? (
-          <Check className="w-3 h-3 text-green-600" />
-        ) : (
-          <Copy className="w-3 h-3" />
-        )}
-      </Button>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleCopy}
+            className="h-5 w-5 shrink-0"
+            data-testid={`button-copy-${testId}`}
+          >
+            {copied ? (
+              <Check className="w-3 h-3 text-green-600" />
+            ) : (
+              <Copy className="w-3 h-3" />
+            )}
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>
+          <p>{copied ? "Copied!" : "Copy ID"}</p>
+        </TooltipContent>
+      </Tooltip>
       <span className="text-xs text-muted-foreground font-mono whitespace-nowrap">
         {label ? `${label}: ` : ""}{id}
       </span>

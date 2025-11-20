@@ -6,6 +6,11 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { Edit, Trash2, Copy, ChevronDown, Eye } from "lucide-react";
 import type { Scene } from "@shared/api-types";
 import IdDisplay from "@/components/IdDisplay";
@@ -38,51 +43,86 @@ export default function SceneCard({
             <IdDisplay id={scene.scene_id} testId="text-scene-id" />
           </div>
           <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => onView(scene.scene_id)}
-              data-testid="button-view-scene"
-            >
-              <Eye className="w-4 h-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => onDuplicate(scene)}
-              data-testid="button-duplicate-scene"
-            >
-              <Copy className="w-4 h-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => onEdit(scene)}
-              data-testid="button-edit-scene"
-            >
-              <Edit className="w-4 h-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => onDelete(scene.scene_id)}
-              data-testid="button-delete-scene"
-            >
-              <Trash2 className="w-4 h-4" />
-            </Button>
-            <CollapsibleTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                data-testid="button-toggle-scene"
-              >
-                <ChevronDown
-                  className={`w-4 h-4 transition-transform ${
-                    isOpen ? "rotate-180" : ""
-                  }`}
-                />
-              </Button>
-            </CollapsibleTrigger>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => onView(scene.scene_id)}
+                  data-testid="button-view-scene"
+                >
+                  <Eye className="w-4 h-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>View scene details</p>
+              </TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => onDuplicate(scene)}
+                  data-testid="button-duplicate-scene"
+                >
+                  <Copy className="w-4 h-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Duplicate scene</p>
+              </TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => onEdit(scene)}
+                  data-testid="button-edit-scene"
+                >
+                  <Edit className="w-4 h-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Edit scene</p>
+              </TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => onDelete(scene.scene_id)}
+                  data-testid="button-delete-scene"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Delete scene</p>
+              </TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <CollapsibleTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    data-testid="button-toggle-scene"
+                  >
+                    <ChevronDown
+                      className={`w-4 h-4 transition-transform ${
+                        isOpen ? "rotate-180" : ""
+                      }`}
+                    />
+                  </Button>
+                </CollapsibleTrigger>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>{isOpen ? "Collapse details" : "Expand details"}</p>
+              </TooltipContent>
+            </Tooltip>
           </div>
         </CardHeader>
         <CollapsibleContent>

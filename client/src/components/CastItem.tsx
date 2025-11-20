@@ -1,5 +1,10 @@
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { Edit, Trash2 } from "lucide-react";
 import type { Cast } from "@shared/api-types";
 import IdDisplay from "@/components/IdDisplay";
@@ -18,22 +23,36 @@ export default function CastItem({ cast, onEdit, onDelete }: CastItemProps) {
           {cast.role}
         </h4>
         <div className="flex gap-2">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => onEdit(cast)}
-            data-testid="button-edit-cast"
-          >
-            <Edit className="w-4 h-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => onDelete(cast.cast_id)}
-            data-testid="button-delete-cast"
-          >
-            <Trash2 className="w-4 h-4" />
-          </Button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => onEdit(cast)}
+                data-testid="button-edit-cast"
+              >
+                <Edit className="w-4 h-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Edit cast member</p>
+            </TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => onDelete(cast.cast_id)}
+                data-testid="button-delete-cast"
+              >
+                <Trash2 className="w-4 h-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Delete cast member</p>
+            </TooltipContent>
+          </Tooltip>
         </div>
       </CardHeader>
       <CardContent className="space-y-2">

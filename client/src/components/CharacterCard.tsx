@@ -6,6 +6,11 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { Edit, Trash2, Copy, ChevronDown } from "lucide-react";
 import type { Character } from "@shared/api-types";
 import IdDisplay from "@/components/IdDisplay";
@@ -36,43 +41,71 @@ export default function CharacterCard({
             <IdDisplay id={character.character_id} testId="text-character-id" />
           </div>
           <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => onDuplicate(character)}
-              data-testid="button-duplicate-character"
-            >
-              <Copy className="w-4 h-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => onEdit(character)}
-              data-testid="button-edit-character"
-            >
-              <Edit className="w-4 h-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => onDelete(character.character_id)}
-              data-testid="button-delete-character"
-            >
-              <Trash2 className="w-4 h-4" />
-            </Button>
-            <CollapsibleTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                data-testid="button-toggle-character"
-              >
-                <ChevronDown
-                  className={`w-4 h-4 transition-transform ${
-                    isOpen ? "rotate-180" : ""
-                  }`}
-                />
-              </Button>
-            </CollapsibleTrigger>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => onDuplicate(character)}
+                  data-testid="button-duplicate-character"
+                >
+                  <Copy className="w-4 h-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Duplicate character</p>
+              </TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => onEdit(character)}
+                  data-testid="button-edit-character"
+                >
+                  <Edit className="w-4 h-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Edit character</p>
+              </TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => onDelete(character.character_id)}
+                  data-testid="button-delete-character"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Delete character</p>
+              </TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <CollapsibleTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    data-testid="button-toggle-character"
+                  >
+                    <ChevronDown
+                      className={`w-4 h-4 transition-transform ${
+                        isOpen ? "rotate-180" : ""
+                      }`}
+                    />
+                  </Button>
+                </CollapsibleTrigger>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>{isOpen ? "Collapse details" : "Expand details"}</p>
+              </TooltipContent>
+            </Tooltip>
           </div>
         </CardHeader>
         <CollapsibleContent>
