@@ -1,3 +1,15 @@
+/**
+ * Cast Item Component
+ * 
+ * Displays a single cast member in a card format with action buttons.
+ * Features:
+ * - Compact view with truncated goal and start text
+ * - Icon buttons for view, edit, and delete actions with tooltips
+ * - Full information dialog accessible via the view button
+ * 
+ * Used in: SceneDetail page to display list of cast members
+ */
+
 import { useState } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -26,6 +38,12 @@ interface CastItemProps {
 export default function CastItem({ cast, onEdit, onDelete }: CastItemProps) {
   const [showFullInfo, setShowFullInfo] = useState(false);
 
+  /**
+   * Truncates text to a maximum length for compact display
+   * @param text - Text to truncate
+   * @param maxLength - Maximum length before truncation (default: 50)
+   * @returns Truncated text with "..." or original text if under limit
+   */
   const truncateText = (text: string, maxLength: number = 50) => {
     if (text.length <= maxLength) return text;
     return text.substring(0, maxLength) + "...";

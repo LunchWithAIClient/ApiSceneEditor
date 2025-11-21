@@ -1,3 +1,20 @@
+/**
+ * Character Detail Page Component
+ * 
+ * Displays detailed information about a single character with edit/delete functionality.
+ * Features:
+ * - View complete character information (name, description, motivation)
+ * - Edit character using a dialog form
+ * - Delete character with confirmation dialog
+ * - Icon-based actions with tooltips
+ * - Loading state while fetching data
+ * - Automatic navigation back to characters list after deletion
+ * 
+ * Dialogs:
+ * - Character edit form
+ * - Character deletion confirmation (uses AlertDialog for consistent UX)
+ */
+
 import { useState, useEffect } from "react";
 import { useRoute, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
@@ -27,14 +44,19 @@ import {
 export default function CharacterDetail() {
   const [, params] = useRoute("/characters/:id");
   const [, setLocation] = useLocation();
+  
   const [character, setCharacter] = useState<Character | null>(null);
   const [formOpen, setFormOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  
   const { toast } = useToast();
-
   const characterId = params?.id || "";
 
+  /**
+   * Loads character data from the API
+   * Only executes if characterId is present
+   */
   const loadCharacter = async () => {
     if (!characterId) return;
     
@@ -53,27 +75,40 @@ export default function CharacterDetail() {
     }
   };
 
+  // Load character data when component mounts or characterId changes
   useEffect(() => {
     loadCharacter();
   }, [characterId]);
 
+  /**
+   * Navigates back to the characters list page
+   */
   const handleBack = () => {
     setLocation("/characters");
   };
 
+  /**
+   * Opens the character edit dialog
+   */
   const handleEdit = () => {
     setFormOpen(true);
   };
 
+  /**
+   * Saves character updates
+   * @param characterData - Partial character data from the form
+   */
   const handleSave = async (characterData: Partial<Character>) => {
     try {
       if (characterData.character_id) {
+        // Exclude character_id from the body as it should only be in the URL
         const { character_id, ...updateData } = characterData;
         await apiClient.updateCharacter(character_id, updateData);
         toast({
           title: "Character updated",
           description: "The character has been updated successfully.",
         });
+        // Reload character data to show the updates
         await loadCharacter();
       }
     } catch (error) {
@@ -85,10 +120,17 @@ export default function CharacterDetail() {
     }
   };
 
+  /**
+   * Opens the delete confirmation dialog
+   */
   const handleDeleteClick = () => {
     setDeleteDialogOpen(true);
   };
 
+  /**
+   * Confirms and executes character deletion
+   * Navigates back to characters list on success
+   */
   const handleDeleteConfirm = async () => {
     if (!character) return;
 
@@ -98,6 +140,7 @@ export default function CharacterDetail() {
         title: "Character deleted",
         description: "The character has been deleted successfully.",
       });
+      // Navigate back to characters list after successful deletion
       setLocation("/characters");
     } catch (error) {
       toast({

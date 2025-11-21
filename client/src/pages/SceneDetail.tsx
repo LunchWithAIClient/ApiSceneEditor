@@ -1,3 +1,24 @@
+/**
+ * Scene Detail Page Component
+ * 
+ * Displays detailed information about a single scene and manages its cast members.
+ * Features:
+ * - View and edit scene information (name, description)
+ * - Delete scene with confirmation dialog
+ * - Manage cast members: create, edit, delete, search
+ * - Search across cast member fields (role, goal, start)
+ * - Full information dialog for scene details
+ * - Icon-based actions with tooltips for better UX
+ * - Loading and empty states
+ * 
+ * This is the most complex page with multiple dialogs and state management:
+ * - Scene edit form
+ * - Cast member edit form
+ * - Scene deletion confirmation
+ * - Cast member deletion confirmation
+ * - Full scene information viewer
+ */
+
 import { useState, useEffect, useMemo } from "react";
 import { useRoute, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
@@ -37,21 +58,32 @@ import {
 export default function SceneDetail() {
   const [, params] = useRoute("/scenes/:id");
   const [, setLocation] = useLocation();
+  
+  // Data state
   const [scene, setScene] = useState<Scene | null>(null);
   const [castMembers, setCastMembers] = useState<Cast[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
+  
+  // Multiple dialogs requiring separate state for each
   const [castFormOpen, setCastFormOpen] = useState(false);
   const [sceneFormOpen, setSceneFormOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleteCastDialogOpen, setDeleteCastDialogOpen] = useState(false);
   const [deletingCastId, setDeletingCastId] = useState<string | null>(null);
   const [showFullInfo, setShowFullInfo] = useState(false);
-  const [editingCast, setEditingCast] = useState<Cast | undefined>();
+  
+  const [editingCast, setEditingCast] = useState<Cast | undefined>(); // undefined = creating new cast member
   const [isLoading, setIsLoading] = useState(true);
+  
   const { toast } = useToast();
-
   const sceneId = params?.id || "";
 
+  /**
+   * Memoized filtered cast members based on search query
+   * Searches across: role, goal, and start fields
+   * Uses nullish coalescing (??) to safely handle null/undefined values
+   * Returns all cast members when search query is empty
+   */
   const filteredCastMembers = useMemo(() => {
     if (!searchQuery.trim()) return castMembers;
     
@@ -64,6 +96,10 @@ export default function SceneDetail() {
     );
   }, [castMembers, searchQuery]);
 
+  /**
+   * Loads scene data from the API
+   * Only executes if sceneId is present
+   */
   const loadScene = async () => {
     if (!sceneId) return;
     
@@ -79,6 +115,10 @@ export default function SceneDetail() {
     }
   };
 
+  /**
+   * Loads cast members for this scene from the API
+   * Only executes if sceneId is present
+   */
   const loadCastMembers = async () => {
     if (!sceneId) return;
     
@@ -94,12 +134,17 @@ export default function SceneDetail() {
     }
   };
 
+  /**
+   * Loads both scene and cast member data in parallel
+   * Sets loading state during fetch
+   */
   const loadData = async () => {
     setIsLoading(true);
     await Promise.all([loadScene(), loadCastMembers()]);
     setIsLoading(false);
   };
 
+  // Load data when component mounts or sceneId changes
   useEffect(() => {
     loadData();
   }, [sceneId]);

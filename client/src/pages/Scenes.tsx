@@ -1,3 +1,17 @@
+/**
+ * Scenes Page Component
+ * 
+ * Displays a grid of all scenes with search and CRUD functionality.
+ * Features:
+ * - Search across scene fields (name, ID, description)
+ * - Create, edit, and delete scenes
+ * - Duplicate existing scenes
+ * - View scene details and cast members
+ * - Display cast member count for each scene
+ * - Empty state when no scenes exist
+ * - Loading state while fetching data
+ */
+
 import { useState, useEffect, useMemo } from "react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
@@ -12,13 +26,19 @@ import type { Scene } from "@shared/api-types";
 export default function Scenes() {
   const [, setLocation] = useLocation();
   const [scenes, setScenes] = useState<Scene[]>([]);
-  const [castMembersByScene, setCastMembersByScene] = useState<Record<string, any[]>>({});
+  const [castMembersByScene, setCastMembersByScene] = useState<Record<string, any[]>>({}); // Cache of cast arrays keyed by scene_id
   const [searchQuery, setSearchQuery] = useState("");
   const [formOpen, setFormOpen] = useState(false);
-  const [editingScene, setEditingScene] = useState<Scene | undefined>();
+  const [editingScene, setEditingScene] = useState<Scene | undefined>(); // undefined = creating new scene
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
+  /**
+   * Memoized filtered scenes based on search query
+   * Searches across: name, scene_id, and description fields
+   * Uses nullish coalescing (??) to safely handle null/undefined values
+   * Returns all scenes when search query is empty
+   */
   const filteredScenes = useMemo(() => {
     if (!searchQuery.trim()) return scenes;
     
@@ -31,13 +51,18 @@ export default function Scenes() {
     );
   }, [scenes, searchQuery]);
 
+  /**
+   * Loads all scenes from the API and fetches cast members for each scene
+   * Uses Promise.all to fetch cast members in parallel for better performance
+   * Gracefully handles errors for individual cast member fetches
+   */
   const loadScenes = async () => {
     try {
       setIsLoading(true);
       const data = await apiClient.getScenes();
       setScenes(data);
       
-      // Fetch cast members for all scenes
+      // Fetch cast members for all scenes in parallel
       const castData: Record<string, any[]> = {};
       await Promise.all(
         data.map(async (scene) => {
@@ -45,6 +70,7 @@ export default function Scenes() {
             const cast = await apiClient.getCastMembers(scene.scene_id);
             castData[scene.scene_id] = cast;
           } catch (error) {
+            // If fetching cast fails for a scene, set empty array
             castData[scene.scene_id] = [];
           }
         })
@@ -61,27 +87,43 @@ export default function Scenes() {
     }
   };
 
+  // Load scenes on component mount
   useEffect(() => {
     loadScenes();
   }, []);
 
+  /**
+   * Navigates to the scene detail page
+   * @param sceneId - ID of the scene to view
+   */
   const handleView = (sceneId: string) => {
     setLocation(`/scenes/${sceneId}`);
   };
 
+  /**
+   * Opens the scene form in edit mode with the selected scene
+   */
   const handleEdit = (scene: Scene) => {
     setEditingScene(scene);
     setFormOpen(true);
   };
 
+  /**
+   * Opens the scene form in create mode (no scene selected)
+   */
   const handleAdd = () => {
     setEditingScene(undefined);
     setFormOpen(true);
   };
 
+  /**
+   * Saves a scene (create or update based on presence of scene_id)
+   * @param sceneData - Partial scene data from the form
+   */
   const handleSave = async (sceneData: Partial<Scene>) => {
     try {
       if (sceneData.scene_id) {
+        // Update existing scene
         // Exclude scene_id from the body as it should only be in the URL
         const { scene_id, ...updateData } = sceneData;
         await apiClient.updateScene(scene_id, updateData);
@@ -90,6 +132,7 @@ export default function Scenes() {
           description: "The scene has been updated successfully.",
         });
       } else {
+        // Create new scene
         await apiClient.createScene({
           name: sceneData.name || "",
           description: sceneData.description || "",
@@ -99,6 +142,7 @@ export default function Scenes() {
           description: "The scene has been created successfully.",
         });
       }
+      // Reload scenes to show the updated list
       await loadScenes();
     } catch (error) {
       toast({
@@ -109,6 +153,10 @@ export default function Scenes() {
     }
   };
 
+  /**
+   * Deletes a scene after confirmation
+   * @param sceneId - ID of the scene to delete
+   */
   const handleDelete = async (sceneId: string) => {
     if (!confirm("Are you sure you want to delete this scene?")) {
       return;
@@ -120,6 +168,7 @@ export default function Scenes() {
         title: "Scene deleted",
         description: "The scene has been deleted successfully.",
       });
+      // Reload scenes to show the updated list
       await loadScenes();
     } catch (error) {
       toast({
@@ -130,6 +179,11 @@ export default function Scenes() {
     }
   };
 
+  /**
+   * Creates a duplicate of an existing scene with " (Copy)" appended to the name
+   * Note: Does not duplicate cast members, only the scene itself
+   * @param scene - The scene to duplicate
+   */
   const handleDuplicate = async (scene: Scene) => {
     try {
       // Create a copy with only the fields allowed by InsertScene
@@ -141,6 +195,7 @@ export default function Scenes() {
         title: "Scene duplicated",
         description: "The scene has been duplicated successfully.",
       });
+      // Reload scenes to show the new duplicate
       await loadScenes();
     } catch (error) {
       toast({
