@@ -1,54 +1,92 @@
-import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
+import { useState } from "react";
+import { useLocation } from "wouter";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Edit, Trash2 } from "lucide-react";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { Eye, ChevronDown } from "lucide-react";
 import type { Character } from "@shared/api-types";
+import IdDisplay from "@/components/IdDisplay";
 
 interface CharacterCardProps {
   character: Character;
-  onEdit: (character: Character) => void;
-  onDelete: (characterId: string) => void;
 }
 
 export default function CharacterCard({
   character,
-  onEdit,
-  onDelete,
 }: CharacterCardProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [, setLocation] = useLocation();
+
   return (
-    <Card className="hover-elevate" data-testid={`card-character-${character.character_id}`}>
-      <CardHeader className="pb-2">
-        <h3 className="text-lg font-medium" data-testid="text-character-name">
-          {character.name}
-        </h3>
-      </CardHeader>
-      <CardContent className="space-y-2">
-        <div>
-          <p className="text-sm text-muted-foreground mb-1">Description</p>
-          <p className="text-base line-clamp-3">{character.description}</p>
-        </div>
-        <div>
-          <p className="text-sm text-muted-foreground mb-1">Motivation</p>
-          <p className="text-base line-clamp-2">{character.motivation}</p>
-        </div>
-      </CardContent>
-      <CardFooter className="flex justify-end gap-2 pt-4">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => onEdit(character)}
-          data-testid="button-edit-character"
-        >
-          <Edit className="w-4 h-4" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => onDelete(character.character_id)}
-          data-testid="button-delete-character"
-        >
-          <Trash2 className="w-4 h-4" />
-        </Button>
-      </CardFooter>
+    <Card data-testid={`card-character-${character.character_id}`}>
+      <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+        <CardHeader className="flex flex-row items-start justify-between gap-4 space-y-0 pb-3">
+          <div className="flex-1 min-w-0">
+            <h3 className="text-lg font-medium mb-1" data-testid="text-character-name">
+              {character.name}
+            </h3>
+            <IdDisplay id={character.character_id} testId="text-character-id" />
+          </div>
+          <div className="flex items-center gap-2">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setLocation(`/characters/${character.character_id}`)}
+                  data-testid="button-view-character"
+                >
+                  <Eye className="w-4 h-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>View character details</p>
+              </TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <CollapsibleTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    data-testid="button-toggle-character"
+                  >
+                    <ChevronDown
+                      className={`w-4 h-4 transition-transform ${
+                        isOpen ? "rotate-180" : ""
+                      }`}
+                    />
+                  </Button>
+                </CollapsibleTrigger>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>{isOpen ? "Collapse details" : "Expand details"}</p>
+              </TooltipContent>
+            </Tooltip>
+          </div>
+        </CardHeader>
+        <CollapsibleContent>
+          <CardContent className="space-y-3 pt-0">
+            <div>
+              <p className="text-sm text-muted-foreground mb-1">Description</p>
+              <p className="text-base">{character.description}</p>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground mb-1">Motivation</p>
+              <p className="text-base">{character.motivation}</p>
+            </div>
+          </CardContent>
+        </CollapsibleContent>
+      </Collapsible>
     </Card>
   );
 }

@@ -82,7 +82,7 @@ Preferred communication style: Simple, everyday language.
 ### External Dependencies
 
 **Third-Party API Integration:**
-- **LunchWith.ai API:** Primary external service at `https://api.lunchwith.ai`
+- **LunchWith.ai API:** Primary external service at `https://api2.lunchwith.ai`
   - Raw API key authentication (no Bearer prefix) using user-provided key
   - API key stored in localStorage under `lunchwith_api_key`
   - Backend proxy at `/api/lunchwith/*` forwards requests to avoid browser CORS restrictions
@@ -126,6 +126,21 @@ The application uses a backend proxy pattern where the frontend communicates wit
 
 **Key Implementation Details:**
 - Frontend makes requests to `/api/lunchwith/*` on the same origin (no CORS)
-- Backend proxy forwards to `https://api.lunchwith.ai` with proper headers
+- Backend proxy forwards to `https://api2.lunchwith.ai` with proper headers
 - Update operations (POST) exclude ID fields from request body (IDs only in URL path)
 - API responses are unwrapped from `{ results: [...] }` envelope automatically
+
+## Feature Overview
+
+### Characters Management
+- CRUD operations for character entities with name, description, and motivation
+- Search/filter by character name or ID
+- Duplicate functionality for quick character creation
+- Collapsible cards showing full details on demand
+
+### Scenes Management
+- CRUD operations for scene entities with name and description
+- Cast member management within each scene (role, goal)
+- Search/filter by scene name or ID
+- Duplicate functionality
+- Scene detail view with cast member list

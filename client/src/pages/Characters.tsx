@@ -1,6 +1,19 @@
-import { useState, useEffect } from "react";
+/**
+ * Characters Page Component
+ * 
+ * Displays a grid of all characters with search and CRUD functionality.
+ * Features:
+ * - Search across all character fields (name, ID, description, motivation)
+ * - Create, edit, and delete characters
+ * - Duplicate existing characters
+ * - Empty state when no characters exist
+ * - Loading state while fetching data
+ */
+
+import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
-import { Plus, Loader2 } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Plus, Loader2, Search } from "lucide-react";
 import CharacterCard from "@/components/CharacterCard";
 import CharacterForm from "@/components/CharacterForm";
 import { apiClient } from "@/lib/lunchWithApi";
@@ -8,12 +21,37 @@ import { useToast } from "@/hooks/use-toast";
 import type { Character } from "@shared/api-types";
 
 export default function Characters() {
+  // State management
   const [characters, setCharacters] = useState<Character[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
   const [formOpen, setFormOpen] = useState(false);
-  const [editingCharacter, setEditingCharacter] = useState<Character | undefined>();
+  const [editingCharacter, setEditingCharacter] = useState<Character | undefined>(); // undefined = creating new character
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
+  /**
+   * Memoized filtered characters based on search query
+   * Searches across: name, character_id, description, and motivation fields
+   * Uses nullish coalescing (??) to safely handle null/undefined values
+   * Returns all characters when search query is empty
+   */
+  const filteredCharacters = useMemo(() => {
+    if (!searchQuery.trim()) return characters;
+    
+    const query = searchQuery.toLowerCase();
+    return characters.filter(
+      (char) =>
+        (char.name ?? "").toLowerCase().includes(query) ||
+        (char.character_id ?? "").toLowerCase().includes(query) ||
+        (char.description ?? "").toLowerCase().includes(query) ||
+        (char.motivation ?? "").toLowerCase().includes(query)
+    );
+  }, [characters, searchQuery]);
+
+  /**
+   * Loads all characters from the API
+   * Sets loading state and handles errors with toast notifications
+   */
   const loadCharacters = async () => {
     try {
       setIsLoading(true);
@@ -30,23 +68,35 @@ export default function Characters() {
     }
   };
 
+  // Load characters on component mount
   useEffect(() => {
     loadCharacters();
   }, []);
 
+  /**
+   * Opens the character form in edit mode with the selected character
+   */
   const handleEdit = (character: Character) => {
     setEditingCharacter(character);
     setFormOpen(true);
   };
 
+  /**
+   * Opens the character form in create mode (no character selected)
+   */
   const handleAdd = () => {
     setEditingCharacter(undefined);
     setFormOpen(true);
   };
 
+  /**
+   * Saves a character (create or update based on presence of character_id)
+   * @param characterData - Partial character data from the form
+   */
   const handleSave = async (characterData: Partial<Character>) => {
     try {
       if (characterData.character_id) {
+        // Update existing character
         // Exclude character_id from the body as it should only be in the URL
         const { character_id, ...updateData } = characterData;
         await apiClient.updateCharacter(character_id, updateData);
@@ -55,6 +105,7 @@ export default function Characters() {
           description: "The character has been updated successfully.",
         });
       } else {
+        // Create new character
         await apiClient.createCharacter({
           name: characterData.name || "",
           description: characterData.description || "",
@@ -65,6 +116,7 @@ export default function Characters() {
           description: "The character has been created successfully.",
         });
       }
+      // Reload characters to show the updated list
       await loadCharacters();
     } catch (error) {
       toast({
@@ -75,6 +127,10 @@ export default function Characters() {
     }
   };
 
+  /**
+   * Deletes a character after confirmation
+   * @param characterId - ID of the character to delete
+   */
   const handleDelete = async (characterId: string) => {
     if (!confirm("Are you sure you want to delete this character?")) {
       return;
@@ -86,10 +142,38 @@ export default function Characters() {
         title: "Character deleted",
         description: "The character has been deleted successfully.",
       });
+      // Reload characters to show the updated list
       await loadCharacters();
     } catch (error) {
       toast({
         title: "Error deleting character",
+        description: error instanceof Error ? error.message : "Unknown error occurred",
+        variant: "destructive",
+      });
+    }
+  };
+
+  /**
+   * Creates a duplicate of an existing character with " (Copy)" appended to the name
+   * @param character - The character to duplicate
+   */
+  const handleDuplicate = async (character: Character) => {
+    try {
+      // Create a copy with only the fields allowed by InsertCharacter
+      await apiClient.createCharacter({
+        name: `${character.name} (Copy)`,
+        description: character.description,
+        motivation: character.motivation,
+      });
+      toast({
+        title: "Character duplicated",
+        description: "The character has been duplicated successfully.",
+      });
+      // Reload characters to show the new duplicate
+      await loadCharacters();
+    } catch (error) {
+      toast({
+        title: "Error duplicating character",
         description: error instanceof Error ? error.message : "Unknown error occurred",
         variant: "destructive",
       });
@@ -126,16 +210,36 @@ export default function Characters() {
           </Button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {characters.map((character) => (
-            <CharacterCard
-              key={character.character_id}
-              character={character}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
+        <>
+          <div className="relative mb-6">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder="Search by any keyword..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10"
+              data-testid="input-search-characters"
             />
-          ))}
-        </div>
+          </div>
+
+          {filteredCharacters.length === 0 ? (
+            <div className="text-center py-16">
+              <p className="text-lg font-medium mb-2">No characters found</p>
+              <p className="text-sm text-muted-foreground">
+                Try adjusting your search query
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {filteredCharacters.map((character) => (
+                <CharacterCard
+                  key={character.character_id}
+                  character={character}
+                />
+              ))}
+            </div>
+          )}
+        </>
       )}
 
       <CharacterForm
