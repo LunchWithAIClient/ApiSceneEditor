@@ -5,58 +5,24 @@
  * All requests go through a backend proxy to avoid CORS issues.
  * 
  * Key features:
- * - API key management with localStorage persistence
+ * - Cognito token-based authentication
+ * - X-LWAI-User-Id header for user identification
  * - Automatic response unwrapping (handles LunchWith.ai's "results" wrapper)
  * - Type-safe methods for all CRUD operations
  * - Comprehensive error handling
  */
 
 import type { Character, Scene, Cast, InsertCharacter, InsertScene, InsertCast } from "@shared/api-types";
+import { cognitoAuth } from "./cognitoAuth";
 
 // Backend proxy endpoint - all requests are forwarded through our Express server
 const API_BASE_URL = "/api/lunchwith";
-// LocalStorage key for persisting the API key across sessions
-const API_KEY_STORAGE_KEY = "lunchwith_api_key";
 
 /**
  * LunchWith.ai API Client Class
- * Manages authentication and communication with the LunchWith.ai API
+ * Manages authentication and communication with the LunchWith.ai API using Cognito tokens
  */
 class LunchWithAPIClient {
-  private apiKey: string | null = null;
-
-  /**
-   * Initializes the client and loads API key from localStorage if available
-   */
-  constructor() {
-    this.apiKey = localStorage.getItem(API_KEY_STORAGE_KEY);
-  }
-
-  /**
-   * Sets and persists the API key
-   * @param key - The LunchWith.ai API key
-   */
-  setApiKey(key: string) {
-    this.apiKey = key;
-    localStorage.setItem(API_KEY_STORAGE_KEY, key);
-  }
-
-  /**
-   * Returns the current API key
-   * @returns The API key or null if not set
-   */
-  getApiKey(): string | null {
-    return this.apiKey;
-  }
-
-  /**
-   * Removes the API key from memory and localStorage
-   */
-  clearApiKey() {
-    this.apiKey = null;
-    localStorage.removeItem(API_KEY_STORAGE_KEY);
-  }
-
   /**
    * Generic request method for all API calls
    * Handles authentication, response parsing, and LunchWith.ai response unwrapping
@@ -78,15 +44,18 @@ class LunchWithAPIClient {
     method: string,
     body?: any
   ): Promise<T> {
-    // Ensure API key is configured before making requests
-    if (!this.apiKey) {
-      throw new Error("API key not set. Please configure your API key.");
+    // Get current session to extract tokens and user info
+    const session = await cognitoAuth.getCurrentSession();
+    
+    if (!session) {
+      throw new Error("Not authenticated. Please sign in.");
     }
 
-    // Setup request headers with API key for authentication
+    // Setup request headers with Cognito token and user ID
     const headers: HeadersInit = {
       "Content-Type": "application/json",
-      "Authorization": this.apiKey,
+      "Authorization": `Bearer ${session.tokens.accessToken}`,
+      "X-LWAI-User-Id": session.user.userId,
     };
 
     const config: RequestInit = {
