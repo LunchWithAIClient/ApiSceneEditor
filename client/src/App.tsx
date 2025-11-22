@@ -27,7 +27,8 @@ import CharacterDetail from "@/pages/CharacterDetail";
 import Scenes from "@/pages/Scenes";
 import SceneDetail from "@/pages/SceneDetail";
 import { cognitoAuth } from "@/lib/cognitoAuth";
-import { setSessionExpiredHandler } from "@/lib/lunchWithApi";
+import { setSessionExpiredHandler, apiClient } from "@/lib/lunchWithApi";
+import type { UserProfile, UserAccountProfile } from "@shared/api-types";
 
 /**
  * Application Router
@@ -64,6 +65,8 @@ export default function App() {
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const [loginDialogOpen, setLoginDialogOpen] = useState(false);
   const [username, setUsername] = useState("");
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [userAccountProfile, setUserAccountProfile] = useState<UserAccountProfile | null>(null);
 
   /**
    * Handle session expiration from API requests
@@ -73,6 +76,8 @@ export default function App() {
     queryClient.clear();
     setIsAuthenticated(false);
     setUsername("");
+    setUserProfile(null);
+    setUserAccountProfile(null);
     setLoginDialogOpen(true);
   };
 
@@ -107,11 +112,46 @@ export default function App() {
     if (session) {
       setIsAuthenticated(true);
       setUsername(session.user.username);
+      
+      // Fetch user profile data
+      await fetchUserProfile();
     } else {
       setLoginDialogOpen(true);
     }
     
     setIsCheckingAuth(false);
+  };
+
+  /**
+   * Fetch user profile data from LunchWith.ai API
+   */
+  const fetchUserProfile = async () => {
+    try {
+      // Fetch general profile (identity + accounts)
+      const profile = await apiClient.getUserProfile();
+      setUserProfile(profile);
+      
+      // If user has accounts, fetch the first account's detailed profile
+      if (profile.accounts && profile.accounts.length > 0) {
+        const firstAccount = profile.accounts[0];
+        const accountProfile = await apiClient.getUserAccount(firstAccount.user_id);
+        setUserAccountProfile(accountProfile);
+        
+        // Use contactName from preferences if available
+        const displayName = accountProfile.preferences.contactName || 
+                           profile.identity.name || 
+                           profile.identity.email || 
+                           "User";
+        setUsername(displayName);
+      }
+    } catch (error) {
+      console.error("Failed to fetch user profile:", error);
+      // Fall back to Cognito username if profile fetch fails
+      const session = await cognitoAuth.getCurrentSession();
+      if (session) {
+        setUsername(session.user.username);
+      }
+    }
   };
 
   /**
@@ -123,6 +163,9 @@ export default function App() {
     if (session) {
       setIsAuthenticated(true);
       setUsername(session.user.username);
+      
+      // Fetch user profile data
+      await fetchUserProfile();
       
       // Invalidate all queries to refetch data with new authentication
       await queryClient.invalidateQueries();
@@ -137,6 +180,8 @@ export default function App() {
     cognitoAuth.signOut();
     setIsAuthenticated(false);
     setUsername("");
+    setUserProfile(null);
+    setUserAccountProfile(null);
     
     // Clear all cached queries when signing out
     queryClient.clear();
