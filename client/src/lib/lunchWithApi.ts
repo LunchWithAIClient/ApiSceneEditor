@@ -18,6 +18,13 @@ import { cognitoAuth } from "./cognitoAuth";
 // Backend proxy endpoint - all requests are forwarded through our Express server
 const API_BASE_URL = "/api/lunchwith";
 
+// Callback for handling session expiration
+let onSessionExpired: (() => void) | null = null;
+
+export function setSessionExpiredHandler(handler: () => void) {
+  onSessionExpired = handler;
+}
+
 /**
  * LunchWith.ai API Client Class
  * Manages authentication and communication with the LunchWith.ai API using Cognito tokens
@@ -75,10 +82,11 @@ class LunchWithAPIClient {
     if (!response.ok) {
       const errorText = await response.text();
       
-      // If unauthorized, sign out and prompt re-login
+      // If unauthorized, trigger session expiration handler
       if (response.status === 401) {
-        cognitoAuth.signOut();
-        window.location.reload();
+        if (onSessionExpired) {
+          onSessionExpired();
+        }
         throw new Error("Session expired. Please sign in again.");
       }
       

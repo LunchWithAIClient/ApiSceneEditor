@@ -27,6 +27,7 @@ import CharacterDetail from "@/pages/CharacterDetail";
 import Scenes from "@/pages/Scenes";
 import SceneDetail from "@/pages/SceneDetail";
 import { cognitoAuth } from "@/lib/cognitoAuth";
+import { setSessionExpiredHandler } from "@/lib/lunchWithApi";
 
 /**
  * Application Router
@@ -64,6 +65,24 @@ export default function App() {
   const [loginDialogOpen, setLoginDialogOpen] = useState(false);
   const [needsConfig, setNeedsConfig] = useState(false);
   const [username, setUsername] = useState("");
+
+  /**
+   * Handle session expiration from API requests
+   */
+  const handleSessionExpired = () => {
+    cognitoAuth.signOut();
+    queryClient.clear();
+    setIsAuthenticated(false);
+    setUsername("");
+    setLoginDialogOpen(true);
+  };
+
+  /**
+   * Set up session expiration handler on mount
+   */
+  useEffect(() => {
+    setSessionExpiredHandler(handleSessionExpired);
+  }, []);
 
   /**
    * Check for existing Cognito session on mount
@@ -140,43 +159,30 @@ export default function App() {
     );
   }
 
-  // Show login screen if not authenticated
-  if (!isAuthenticated) {
-    return (
-      <QueryClientProvider client={queryClient}>
-        <TooltipProvider delayDuration={0}>
+  // Render authenticated app
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider delayDuration={0}>
+        {!isAuthenticated ? (
           <div className="flex items-center justify-center h-screen">
             <div className="text-center">
               <h1 className="text-3xl font-bold mb-2">LunchWith.ai Manager</h1>
               <p className="text-muted-foreground mb-4">Please sign in to continue</p>
             </div>
           </div>
-          <CognitoLogin
-            open={loginDialogOpen}
-            onOpenChange={setLoginDialogOpen}
-            onLoginSuccess={handleLoginSuccess}
-            needsConfig={needsConfig}
-          />
-          <Toaster />
-        </TooltipProvider>
-      </QueryClientProvider>
-    );
-  }
-
-  return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider delayDuration={0}>
-        <div className="min-h-screen bg-background">
-          <Header 
-            username={username}
-            isAuthenticated={isAuthenticated}
-            onSignOut={handleSignOut}
-            onManageAuth={() => setLoginDialogOpen(true)}
-          />
-          <main>
-            <Router />
-          </main>
-        </div>
+        ) : (
+          <div className="min-h-screen bg-background">
+            <Header 
+              username={username}
+              isAuthenticated={isAuthenticated}
+              onSignOut={handleSignOut}
+              onManageAuth={() => setLoginDialogOpen(true)}
+            />
+            <main>
+              <Router />
+            </main>
+          </div>
+        )}
         <CognitoLogin
           open={loginDialogOpen}
           onOpenChange={setLoginDialogOpen}
