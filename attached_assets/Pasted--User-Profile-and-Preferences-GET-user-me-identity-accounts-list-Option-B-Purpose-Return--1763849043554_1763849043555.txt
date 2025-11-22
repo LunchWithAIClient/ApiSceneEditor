@@ -1,0 +1,85 @@
+
+User Profile and Preferences
+GET /user/me (identity + accounts list — Option B)
+Purpose: Return the current authenticated Cognito identity and the list of LWAI accounts (user_id values) that this identity can access.
+Auth: Requires a valid Cognito JWT Access Token in the Authorization: Bearer <access_token> header.
+Behavior (target multi-account design):
+Extract Cognito sub (and optionally email, name) from the JWT claims.
+Determine the set of LWAI accounts (user_ids) available to this identity, for example:
+From a custom JWT claim (e.g., lwai_accounts: ["user-id-1", "user-id-2"]), or
+From a server-side mapping from sub to accounts.
+Return:
+identity: Cognito-level identity (sub, email, name).
+accounts: a list of account objects, each including at least:
+user_id: internal LWAI account identifier.
+Optional metadata such as name or contactName.
+Example request:
+Method and URL: GET https://api2.lunchwith.ai/user/me
+Example response (single-account case, which matches current implementation semantics):
+{
+  "results": [
+    {
+      "identity": {
+        "sub": "b8a13390-7011-7046-20ba-ba54b064f207",
+        "email": null,
+        "name": null
+      },
+      "accounts": [
+        {
+          "user_id": "ac2c9954-bdc4-49aa-8ef35bc67b22",
+          "contactName": "pytest-user"
+        }
+      ]
+    }
+  ],
+  "statusCode": 200,
+  "title": "OK",
+  "detail": "Current identity and accessible accounts"
+}
+GET /user/me/{user_id} (account-specific profile — Option A)
+Purpose: Return identity + preferences for a specific LWAI account (user_id) that the caller can access.
+Auth: Requires a valid Cognito JWT Access Token in the Authorization: Bearer <access_token> header.
+Account selection:
+The {user_id} path parameter identifies which LWAI account is being queried.
+In a multi-account setup, the backend must verify that this user_id is allowed for the calling identity (e.g., present in the token’s lwai_accounts claim or equivalent mapping).
+The X-LWAI-User-Id header may be treated as an equivalent selector for other endpoints; for this route, the path parameter is canonical.
+Behavior:
+Extract sub and other claims from the JWT.
+Verify that {user_id} is in the set of accounts the caller can access.
+Load the corresponding user row (partitioned by user_id / api_key) and build:
+identity:
+user_id: the requested account identifier.
+sub, email, name.
+preferences (from the user row):
+user_id
+sqs_url
+model_name, model_created_on
+prompt_id, prompt_created_on
+contactName (if present)
+Example request:
+Method and URL: GET https://api2.lunchwith.ai/user/me/ac2c9954-bdc4-49aa-b80a-8ef35bc67b22
+Example response (200, single-account example):
+{
+  "results": [
+    {
+      "identity": {
+        "user_id": "ac2c9954-bdc4-49aa-b80a-8ef35bc67b22",
+        "sub": "b8a13390-7011-7046-20ba-ba54b064f207",
+        "email": null,
+        "name": null
+      },
+      "preferences": {
+        "user_id": "ac2c9954-bdc4-49aa-b80a-8ef35bc67b22",
+        "sqs_url": "https://sqs.us-west-2.amazonaws.com/539247463838/LunchWithAI-Testing-dev",
+        "model_name": "trance",
+        "model_created_on": "2025-08-25T18:58:26.536Z",
+        "prompt_id": "80158cc4-1e17-4e49-8d38-f8e2cb4e3d5e",
+        "prompt_created_on": "2025-05-17T14:07:06.820425",
+        "contactName": "pytest-user"
+      }
+    }
+  ],
+  "statusCode": 200,
+  "title": "OK",
+  "detail": "Current user profile for selected account"
+}
