@@ -103,6 +103,11 @@ class LunchWithAPIClient {
 
     const data = JSON.parse(text);
     
+    // Debug logging for scene endpoint
+    if (endpoint.includes('/scene')) {
+      console.log("🔍 Raw API response for", endpoint, ":", data);
+    }
+    
     /**
      * LunchWith.ai API Response Unwrapping Logic
      * 

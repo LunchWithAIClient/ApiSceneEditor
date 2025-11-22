@@ -59,7 +59,10 @@ export default function Scenes() {
   const loadScenes = async () => {
     try {
       setIsLoading(true);
+      console.log("🔍 Fetching scenes from API...");
       const data = await apiClient.getScenes();
+      console.log("📦 Received scenes data:", data);
+      console.log("📊 Number of scenes:", Array.isArray(data) ? data.length : "NOT AN ARRAY");
       setScenes(data);
       
       // Fetch cast members for all scenes in parallel
@@ -77,6 +80,7 @@ export default function Scenes() {
       );
       setCastMembersByScene(castData);
     } catch (error) {
+      console.error("❌ Error loading scenes:", error);
       toast({
         title: "Error loading scenes",
         description: error instanceof Error ? error.message : "Unknown error occurred",
