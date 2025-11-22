@@ -121,7 +121,7 @@ Preferred communication style: Simple, everyday language.
 
 The application uses AWS Cognito for user authentication:
 
-1. **Configuration:** Users provide Cognito User Pool ID and App Client ID on first launch
+1. **Configuration:** Cognito User Pool ID and App Client ID are stored as environment variables (`VITE_COGNITO_USER_POOL_ID` and `VITE_COGNITO_CLIENT_ID`)
 2. **Sign In:** Users authenticate with username and password via Cognito
 3. **Session Management:** Cognito tokens (access, ID, refresh) are managed by `cognitoAuth.ts`
 4. **User Identification:** User ID is extracted from Cognito ID token payload (`custom:user_id` or `sub`)

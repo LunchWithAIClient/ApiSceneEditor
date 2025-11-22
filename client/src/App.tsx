@@ -97,6 +97,7 @@ export default function App() {
     // Check if Cognito is configured via environment variables
     if (!cognitoAuth.isConfigured()) {
       console.error("Cognito not configured. Please set VITE_COGNITO_USER_POOL_ID and VITE_COGNITO_CLIENT_ID environment variables.");
+      // Stop loading but don't set authenticated - will show config error
       setIsCheckingAuth(false);
       return;
     }
@@ -150,6 +151,29 @@ export default function App() {
         <div className="flex items-center justify-center h-screen">
           <div className="text-center">
             <p className="text-muted-foreground">Loading...</p>
+          </div>
+        </div>
+      </QueryClientProvider>
+    );
+  }
+
+  // Show configuration error if Cognito is not configured
+  if (!cognitoAuth.isConfigured()) {
+    return (
+      <QueryClientProvider client={queryClient}>
+        <div className="flex items-center justify-center h-screen">
+          <div className="text-center max-w-md px-4">
+            <h1 className="text-3xl font-bold mb-4 text-destructive">Configuration Error</h1>
+            <p className="text-muted-foreground mb-4">
+              AWS Cognito is not configured. Please set the following environment variables:
+            </p>
+            <div className="bg-muted p-4 rounded-md text-left font-mono text-sm mb-4">
+              <div>VITE_COGNITO_USER_POOL_ID</div>
+              <div>VITE_COGNITO_CLIENT_ID</div>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Contact your administrator or check the deployment configuration.
+            </p>
           </div>
         </div>
       </QueryClientProvider>
