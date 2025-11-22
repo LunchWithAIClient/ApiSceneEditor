@@ -63,7 +63,6 @@ export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const [loginDialogOpen, setLoginDialogOpen] = useState(false);
-  const [needsConfig, setNeedsConfig] = useState(false);
   const [username, setUsername] = useState("");
 
   /**
@@ -95,10 +94,9 @@ export default function App() {
   const checkAuthentication = async () => {
     setIsCheckingAuth(true);
     
-    // Check if Cognito is configured
+    // Check if Cognito is configured via environment variables
     if (!cognitoAuth.isConfigured()) {
-      setNeedsConfig(true);
-      setLoginDialogOpen(true);
+      console.error("Cognito not configured. Please set VITE_COGNITO_USER_POOL_ID and VITE_COGNITO_CLIENT_ID environment variables.");
       setIsCheckingAuth(false);
       return;
     }
@@ -124,7 +122,6 @@ export default function App() {
     if (session) {
       setIsAuthenticated(true);
       setUsername(session.user.username);
-      setNeedsConfig(false);
       
       // Invalidate all queries to refetch data with new authentication
       await queryClient.invalidateQueries();
@@ -187,7 +184,6 @@ export default function App() {
           open={loginDialogOpen}
           onOpenChange={setLoginDialogOpen}
           onLoginSuccess={handleLoginSuccess}
-          needsConfig={needsConfig}
         />
         <Toaster />
       </TooltipProvider>
