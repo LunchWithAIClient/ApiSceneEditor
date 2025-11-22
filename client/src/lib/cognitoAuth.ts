@@ -14,16 +14,9 @@ import {
 
 // LocalStorage keys for persisting auth data
 const STORAGE_KEYS = {
-  USER_POOL_ID: 'cognito_user_pool_id',
-  CLIENT_ID: 'cognito_client_id',
   USERNAME: 'cognito_username',
   USER_ID: 'cognito_user_id',
 };
-
-export interface CognitoConfig {
-  userPoolId: string;
-  clientId: string;
-}
 
 export interface AuthTokens {
   accessToken: string;
@@ -39,38 +32,18 @@ export interface AuthUser {
 class CognitoAuthService {
   private userPool: CognitoUserPool | null = null;
   private currentUser: CognitoUser | null = null;
-  private config: CognitoConfig | null = null;
 
   constructor() {
-    // Try to restore config from localStorage
-    const userPoolId = localStorage.getItem(STORAGE_KEYS.USER_POOL_ID);
-    const clientId = localStorage.getItem(STORAGE_KEYS.CLIENT_ID);
+    // Initialize from environment variables
+    const userPoolId = import.meta.env.VITE_COGNITO_USER_POOL_ID;
+    const clientId = import.meta.env.VITE_COGNITO_CLIENT_ID;
     
     if (userPoolId && clientId) {
-      this.initializeUserPool({ userPoolId, clientId });
+      this.userPool = new CognitoUserPool({
+        UserPoolId: userPoolId,
+        ClientId: clientId,
+      });
     }
-  }
-
-  /**
-   * Initialize Cognito User Pool with configuration
-   */
-  initializeUserPool(config: CognitoConfig) {
-    this.config = config;
-    this.userPool = new CognitoUserPool({
-      UserPoolId: config.userPoolId,
-      ClientId: config.clientId,
-    });
-
-    // Persist configuration
-    localStorage.setItem(STORAGE_KEYS.USER_POOL_ID, config.userPoolId);
-    localStorage.setItem(STORAGE_KEYS.CLIENT_ID, config.clientId);
-  }
-
-  /**
-   * Get current configuration
-   */
-  getConfig(): CognitoConfig | null {
-    return this.config;
   }
 
   /**
@@ -186,16 +159,6 @@ class CognitoAuthService {
     localStorage.removeItem(STORAGE_KEYS.USER_ID);
   }
 
-  /**
-   * Clear all stored configuration and auth data
-   */
-  clearConfig() {
-    this.signOut();
-    this.userPool = null;
-    this.config = null;
-    localStorage.removeItem(STORAGE_KEYS.USER_POOL_ID);
-    localStorage.removeItem(STORAGE_KEYS.CLIENT_ID);
-  }
 }
 
 export const cognitoAuth = new CognitoAuthService();

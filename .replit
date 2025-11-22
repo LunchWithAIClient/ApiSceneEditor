@@ -53,3 +53,9 @@ author = "agent"
 task = "shell.exec"
 args = "npm run dev"
 waitForPort = 5000
+
+[userenv]
+
+[userenv.shared]
+VITE_COGNITO_USER_POOL_ID = "us-west-2_1vqaagtDk"
+VITE_COGNITO_CLIENT_ID = "2s0tps7nbubevk80ru8rjvoibb"
