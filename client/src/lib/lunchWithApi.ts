@@ -74,6 +74,14 @@ class LunchWithAPIClient {
     // Handle HTTP errors
     if (!response.ok) {
       const errorText = await response.text();
+      
+      // If unauthorized, sign out and prompt re-login
+      if (response.status === 401) {
+        cognitoAuth.signOut();
+        window.location.reload();
+        throw new Error("Session expired. Please sign in again.");
+      }
+      
       throw new Error(
         `API request failed: ${response.status} ${response.statusText}. ${errorText}`
       );

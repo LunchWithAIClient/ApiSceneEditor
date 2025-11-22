@@ -60,6 +60,7 @@ function Router() {
 
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const [loginDialogOpen, setLoginDialogOpen] = useState(false);
   const [needsConfig, setNeedsConfig] = useState(false);
   const [username, setUsername] = useState("");
@@ -73,10 +74,13 @@ export default function App() {
   }, []);
 
   const checkAuthentication = async () => {
+    setIsCheckingAuth(true);
+    
     // Check if Cognito is configured
     if (!cognitoAuth.isConfigured()) {
       setNeedsConfig(true);
       setLoginDialogOpen(true);
+      setIsCheckingAuth(false);
       return;
     }
 
@@ -88,11 +92,13 @@ export default function App() {
     } else {
       setLoginDialogOpen(true);
     }
+    
+    setIsCheckingAuth(false);
   };
 
   /**
    * Handle successful login
-   * Closes dialog and marks user as authenticated
+   * Closes dialog, marks user as authenticated, and invalidates all queries
    */
   const handleLoginSuccess = async () => {
     const session = await cognitoAuth.getCurrentSession();
@@ -100,19 +106,62 @@ export default function App() {
       setIsAuthenticated(true);
       setUsername(session.user.username);
       setNeedsConfig(false);
+      
+      // Invalidate all queries to refetch data with new authentication
+      await queryClient.invalidateQueries();
     }
   };
 
   /**
    * Handle sign out
-   * Clears session and shows login dialog
+   * Clears session, clears query cache, and shows login dialog
    */
   const handleSignOut = () => {
     cognitoAuth.signOut();
     setIsAuthenticated(false);
     setUsername("");
+    
+    // Clear all cached queries when signing out
+    queryClient.clear();
+    
     setLoginDialogOpen(true);
   };
+
+  // Show loading state while checking authentication
+  if (isCheckingAuth) {
+    return (
+      <QueryClientProvider client={queryClient}>
+        <div className="flex items-center justify-center h-screen">
+          <div className="text-center">
+            <p className="text-muted-foreground">Loading...</p>
+          </div>
+        </div>
+      </QueryClientProvider>
+    );
+  }
+
+  // Show login screen if not authenticated
+  if (!isAuthenticated) {
+    return (
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider delayDuration={0}>
+          <div className="flex items-center justify-center h-screen">
+            <div className="text-center">
+              <h1 className="text-3xl font-bold mb-2">LunchWith.ai Manager</h1>
+              <p className="text-muted-foreground mb-4">Please sign in to continue</p>
+            </div>
+          </div>
+          <CognitoLogin
+            open={loginDialogOpen}
+            onOpenChange={setLoginDialogOpen}
+            onLoginSuccess={handleLoginSuccess}
+            needsConfig={needsConfig}
+          />
+          <Toaster />
+        </TooltipProvider>
+      </QueryClientProvider>
+    );
+  }
 
   return (
     <QueryClientProvider client={queryClient}>
