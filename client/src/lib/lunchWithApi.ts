@@ -58,20 +58,14 @@ class LunchWithAPIClient {
       throw new Error("Not authenticated. Please sign in.");
     }
 
-    // Setup request headers with Cognito token
+    // Setup request headers with Cognito token and user ID
     const headers: HeadersInit = {
       "Content-Type": "application/json",
       "Authorization": `Bearer ${session.tokens.accessToken}`,
+      "X-LWAI-User-Id": session.user.userId,
     };
     
-    // Only include X-LWAI-User-Id for non-user-discovery endpoints
-    // The /user/me endpoint uses the JWT token to determine identity
-    if (!endpoint.startsWith('/user/me')) {
-      headers["X-LWAI-User-Id"] = session.user.userId;
-      console.log(`📤 API Request: ${method} ${endpoint} with User-Id: ${session.user.userId}`);
-    } else {
-      console.log(`📤 API Request: ${method} ${endpoint} (discovery mode, no User-Id header)`);
-    }
+    console.log(`📤 API Request: ${method} ${endpoint} with User-Id: ${session.user.userId}`);
 
     const config: RequestInit = {
       method,
@@ -129,6 +123,13 @@ class LunchWithAPIClient {
     if (data && typeof data === 'object' && 'results' in data) {
       const results = data.results;
       if (Array.isArray(results)) {
+        // User profile endpoints always return a single object
+        // Unwrap immediately if there's at least one result
+        const isUserProfileEndpoint = endpoint.startsWith('/user/me');
+        if (isUserProfileEndpoint && results.length > 0) {
+          return results[0] as T;
+        }
+        
         // Detect if this is a specific resource request by examining the endpoint
         // Pattern matching:
         // - /scene/{uuid} or /character/{uuid} = single resource
