@@ -64,6 +64,8 @@ class LunchWithAPIClient {
       "Authorization": `Bearer ${session.tokens.accessToken}`,
       "X-LWAI-User-Id": session.user.userId,
     };
+    
+    console.log(`📤 API Request: ${method} ${endpoint} with User-Id: ${session.user.userId}`);
 
     const config: RequestInit = {
       method,
