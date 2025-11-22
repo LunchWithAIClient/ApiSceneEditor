@@ -6,12 +6,14 @@ const LUNCHWITH_API_BASE = "https://api2.lunchwith.ai";
 async function proxyToLunchWithAPI(
   endpoint: string,
   method: string,
-  apiKey: string,
+  authToken: string,
+  userId: string,
   body?: any
 ): Promise<Response> {
   const headers: HeadersInit = {
     "Content-Type": "application/json",
-    "Authorization": apiKey,
+    "Authorization": authToken,
+    "X-LWAI-User-Id": userId,
   };
 
   const config: RequestInit = {
@@ -32,13 +34,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Proxy route for LunchWith.ai API to avoid CORS issues in the browser
   app.all("/api/lunchwith/*", async (req, res) => {
     try {
-      // Extract API key from Authorization header
+      // Extract authentication token from Authorization header
       const authHeader = req.headers.authorization;
       if (!authHeader) {
-        return res.status(401).json({ error: "Missing API key in Authorization header" });
+        return res.status(401).json({ error: "Missing authorization token in Authorization header" });
       }
 
-      const apiKey = authHeader;
+      // Extract user ID from X-LWAI-User-Id header
+      const userId = req.headers['x-lwai-user-id'] as string;
+      if (!userId) {
+        return res.status(401).json({ error: "Missing X-LWAI-User-Id header" });
+      }
       
       // Extract the endpoint path and preserve query string
       // req.url includes both path and query string
@@ -48,7 +54,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const response = await proxyToLunchWithAPI(
         endpoint,
         req.method,
-        apiKey,
+        authHeader,
+        userId,
         req.body
       );
 
