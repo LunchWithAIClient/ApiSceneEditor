@@ -4,13 +4,13 @@
  * This is the root component that provides:
  * - Routing configuration for all pages
  * - Global state providers (QueryClient, TooltipProvider)
- * - API key management and authentication flow
+ * - Cognito authentication flow
  * - Application layout (Header + Main content)
  * 
  * Flow:
- * 1. On mount, check if API key exists in localStorage
- * 2. If no API key, show API key dialog
- * 3. When API key is saved, reload page to reinitialize all components
+ * 1. On mount, check if user has a valid Cognito session
+ * 2. If not authenticated, show Cognito login dialog
+ * 3. When authenticated, allow access to the application
  * 4. Render appropriate page based on route
  */
 
@@ -21,12 +21,12 @@ import { queryClient } from "./lib/queryClient";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import Header from "@/components/Header";
-import APIKeyDialog from "@/components/APIKeyDialog";
+import CognitoLogin from "@/components/CognitoLogin";
 import Characters from "@/pages/Characters";
 import CharacterDetail from "@/pages/CharacterDetail";
 import Scenes from "@/pages/Scenes";
 import SceneDetail from "@/pages/SceneDetail";
-import { apiClient } from "@/lib/lunchWithApi";
+import { cognitoAuth } from "@/lib/cognitoAuth";
 
 /**
  * Application Router
@@ -59,31 +59,59 @@ function Router() {
 }
 
 export default function App() {
-  const [apiKey, setApiKey] = useState("");
-  const [apiKeyDialogOpen, setApiKeyDialogOpen] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [loginDialogOpen, setLoginDialogOpen] = useState(false);
+  const [needsConfig, setNeedsConfig] = useState(false);
+  const [username, setUsername] = useState("");
 
   /**
-   * Check for stored API key on mount
-   * If missing, show dialog to prompt user for key
+   * Check for existing Cognito session on mount
+   * If no session or not configured, show login dialog
    */
   useEffect(() => {
-    const storedKey = apiClient.getApiKey();
-    if (storedKey) {
-      setApiKey(storedKey);
-    } else {
-      setApiKeyDialogOpen(true);
-    }
+    checkAuthentication();
   }, []);
 
+  const checkAuthentication = async () => {
+    // Check if Cognito is configured
+    if (!cognitoAuth.isConfigured()) {
+      setNeedsConfig(true);
+      setLoginDialogOpen(true);
+      return;
+    }
+
+    // Check for existing session
+    const session = await cognitoAuth.getCurrentSession();
+    if (session) {
+      setIsAuthenticated(true);
+      setUsername(session.user.username);
+    } else {
+      setLoginDialogOpen(true);
+    }
+  };
+
   /**
-   * Saves new API key and reloads the page
-   * Page reload ensures apiClient singleton picks up the new key from localStorage
-   * @param key - The new API key to save
+   * Handle successful login
+   * Closes dialog and marks user as authenticated
    */
-  const handleSaveApiKey = (key: string) => {
-    setApiKey(key);
-    apiClient.setApiKey(key);
-    window.location.reload();
+  const handleLoginSuccess = async () => {
+    const session = await cognitoAuth.getCurrentSession();
+    if (session) {
+      setIsAuthenticated(true);
+      setUsername(session.user.username);
+      setNeedsConfig(false);
+    }
+  };
+
+  /**
+   * Handle sign out
+   * Clears session and shows login dialog
+   */
+  const handleSignOut = () => {
+    cognitoAuth.signOut();
+    setIsAuthenticated(false);
+    setUsername("");
+    setLoginDialogOpen(true);
   };
 
   return (
@@ -91,18 +119,20 @@ export default function App() {
       <TooltipProvider delayDuration={0}>
         <div className="min-h-screen bg-background">
           <Header 
-            apiKey={apiKey} 
-            onManageApiKey={() => setApiKeyDialogOpen(true)} 
+            username={username}
+            isAuthenticated={isAuthenticated}
+            onSignOut={handleSignOut}
+            onManageAuth={() => setLoginDialogOpen(true)}
           />
           <main>
             <Router />
           </main>
         </div>
-        <APIKeyDialog
-          open={apiKeyDialogOpen}
-          onOpenChange={setApiKeyDialogOpen}
-          currentApiKey={apiKey}
-          onSave={handleSaveApiKey}
+        <CognitoLogin
+          open={loginDialogOpen}
+          onOpenChange={setLoginDialogOpen}
+          onLoginSuccess={handleLoginSuccess}
+          needsConfig={needsConfig}
         />
         <Toaster />
       </TooltipProvider>

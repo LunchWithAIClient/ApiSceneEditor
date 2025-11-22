@@ -1,13 +1,15 @@
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Key } from "lucide-react";
+import { LogOut, User } from "lucide-react";
 
 interface HeaderProps {
-  apiKey: string;
-  onManageApiKey: () => void;
+  username: string;
+  isAuthenticated: boolean;
+  onSignOut: () => void;
+  onManageAuth: () => void;
 }
 
-export default function Header({ apiKey, onManageApiKey }: HeaderProps) {
+export default function Header({ username, isAuthenticated, onSignOut, onManageAuth }: HeaderProps) {
   const [location] = useLocation();
 
   return (
@@ -35,17 +37,32 @@ export default function Header({ apiKey, onManageApiKey }: HeaderProps) {
               </Link>
             </nav>
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onManageApiKey}
-            data-testid="button-api-key"
-          >
-            <Key className="w-4 h-4 mr-2" />
-            <span className="text-sm">
-              {apiKey ? "API Key Set" : "No API Key"}
-            </span>
-          </Button>
+          <div className="flex items-center gap-2">
+            {isAuthenticated && username && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground mr-2">
+                <User className="w-4 h-4" />
+                <span data-testid="text-username">{username}</span>
+              </div>
+            )}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={isAuthenticated ? onSignOut : onManageAuth}
+              data-testid={isAuthenticated ? "button-sign-out" : "button-sign-in"}
+            >
+              {isAuthenticated ? (
+                <>
+                  <LogOut className="w-4 h-4 mr-2" />
+                  Sign Out
+                </>
+              ) : (
+                <>
+                  <User className="w-4 h-4 mr-2" />
+                  Sign In
+                </>
+              )}
+            </Button>
+          </div>
         </div>
       </div>
     </header>
