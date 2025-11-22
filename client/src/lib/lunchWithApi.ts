@@ -58,14 +58,20 @@ class LunchWithAPIClient {
       throw new Error("Not authenticated. Please sign in.");
     }
 
-    // Setup request headers with Cognito token and user ID
+    // Setup request headers with Cognito token
     const headers: HeadersInit = {
       "Content-Type": "application/json",
       "Authorization": `Bearer ${session.tokens.accessToken}`,
-      "X-LWAI-User-Id": session.user.userId,
     };
     
-    console.log(`📤 API Request: ${method} ${endpoint} with User-Id: ${session.user.userId}`);
+    // Only include X-LWAI-User-Id for non-user-discovery endpoints
+    // The /user/me endpoint uses the JWT token to determine identity
+    if (!endpoint.startsWith('/user/me')) {
+      headers["X-LWAI-User-Id"] = session.user.userId;
+      console.log(`📤 API Request: ${method} ${endpoint} with User-Id: ${session.user.userId}`);
+    } else {
+      console.log(`📤 API Request: ${method} ${endpoint} (discovery mode, no User-Id header)`);
+    }
 
     const config: RequestInit = {
       method,

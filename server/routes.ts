@@ -13,8 +13,12 @@ async function proxyToLunchWithAPI(
   const headers: HeadersInit = {
     "Content-Type": "application/json",
     "Authorization": authToken,
-    "X-LWAI-User-Id": userId,
   };
+  
+  // Only include X-LWAI-User-Id if provided (user discovery endpoints don't need it)
+  if (userId) {
+    headers["X-LWAI-User-Id"] = userId;
+  }
 
   const config: RequestInit = {
     method,
@@ -40,22 +44,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ error: "Missing authorization token in Authorization header" });
       }
 
-      // Extract user ID from X-LWAI-User-Id header
-      const userId = req.headers['x-lwai-user-id'] as string;
-      if (!userId) {
-        return res.status(401).json({ error: "Missing X-LWAI-User-Id header" });
-      }
-      
       // Extract the endpoint path and preserve query string
       // req.url includes both path and query string
       const endpoint = req.url.replace("/api/lunchwith", "");
+      
+      // Extract user ID from X-LWAI-User-Id header
+      // The /user/me endpoint doesn't require X-LWAI-User-Id (it's for discovery)
+      const userId = req.headers['x-lwai-user-id'] as string;
+      const isUserDiscovery = endpoint.startsWith('/user/me');
+      
+      if (!userId && !isUserDiscovery) {
+        return res.status(401).json({ error: "Missing X-LWAI-User-Id header" });
+      }
       
       // Forward the request to LunchWith.ai API
       const response = await proxyToLunchWithAPI(
         endpoint,
         req.method,
         authHeader,
-        userId,
+        userId || "", // Pass empty string for user discovery endpoints
         req.body
       );
 
