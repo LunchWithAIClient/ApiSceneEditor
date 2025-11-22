@@ -47,6 +47,64 @@ class CognitoAuthService {
   }
 
   /**
+   * Extract LWAI user ID from Cognito ID token payload
+   * Priority: custom:lwai_accounts → custom:user_id → sub
+   */
+  private extractLwaiUserId(idTokenPayload: any): string {
+    // Debug: Log all token payload keys to identify custom attributes
+    console.log('🔍 Cognito ID token payload keys:', Object.keys(idTokenPayload));
+    console.log('🔍 Full ID token payload:', idTokenPayload);
+    
+    // First, check custom:lwai_accounts (primary source)
+    const lwaiAccounts = idTokenPayload['custom:lwai_accounts'];
+    if (lwaiAccounts) {
+      // Handle different formats:
+      // - Single string: "1106072e-fa0f-44f4-8c0a-54661c8411e1"
+      // - Comma-delimited: "id1,id2,id3"
+      // - JSON array: "[\"id1\",\"id2\"]"
+      
+      if (typeof lwaiAccounts === 'string') {
+        const trimmed = lwaiAccounts.trim();
+        
+        // Try parsing as JSON array
+        if (trimmed.startsWith('[')) {
+          try {
+            const parsed = JSON.parse(trimmed);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              console.log('✅ Extracted LWAI user ID from custom:lwai_accounts (JSON array):', parsed[0]);
+              return parsed[0];
+            }
+          } catch (e) {
+            console.warn('Failed to parse custom:lwai_accounts as JSON:', e);
+          }
+        }
+        
+        // Handle comma-delimited or single value
+        const accounts = trimmed.split(',').map(s => s.trim()).filter(s => s);
+        if (accounts.length > 0) {
+          console.log('✅ Extracted LWAI user ID from custom:lwai_accounts:', accounts[0]);
+          return accounts[0];
+        }
+      } else if (Array.isArray(lwaiAccounts) && lwaiAccounts.length > 0) {
+        console.log('✅ Extracted LWAI user ID from custom:lwai_accounts (array):', lwaiAccounts[0]);
+        return lwaiAccounts[0];
+      }
+    }
+    
+    // Fallback to custom:user_id
+    const customUserId = idTokenPayload['custom:user_id'];
+    if (customUserId) {
+      console.log('⚠️ Using fallback custom:user_id:', customUserId);
+      return customUserId;
+    }
+    
+    // Last resort: use Cognito sub
+    const sub = idTokenPayload.sub;
+    console.warn('⚠️ Using Cognito sub as LWAI user ID (custom attributes missing):', sub);
+    return sub;
+  }
+
+  /**
    * Check if user pool is configured
    */
   isConfigured(): boolean {
@@ -82,9 +140,9 @@ class CognitoAuthService {
             refreshToken: session.getRefreshToken().getToken(),
           };
 
-          // Extract user_id from ID token payload
+          // Extract LWAI user_id from ID token payload
           const idTokenPayload = session.getIdToken().payload;
-          const userId = idTokenPayload['custom:user_id'] || idTokenPayload.sub;
+          const userId = this.extractLwaiUserId(idTokenPayload);
 
           const user: AuthUser = {
             username,
@@ -132,9 +190,16 @@ class CognitoAuthService {
           refreshToken: session.getRefreshToken().getToken(),
         };
 
-        // Get stored user info
+        // Get username from localStorage
         const username = localStorage.getItem(STORAGE_KEYS.USERNAME) || '';
-        const userId = localStorage.getItem(STORAGE_KEYS.USER_ID) || session.getIdToken().payload.sub;
+        
+        // Extract LWAI user_id from ID token (always fresh from token)
+        // This ensures we always use the latest value from Cognito
+        const idTokenPayload = session.getIdToken().payload;
+        const userId = this.extractLwaiUserId(idTokenPayload);
+        
+        // Update localStorage with the latest userId
+        localStorage.setItem(STORAGE_KEYS.USER_ID, userId);
 
         const user: AuthUser = {
           username,
