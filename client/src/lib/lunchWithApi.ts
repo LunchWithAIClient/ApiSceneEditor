@@ -12,7 +12,7 @@
  * - Comprehensive error handling
  */
 
-import type { Character, Scene, Cast, InsertCharacter, InsertScene, InsertCast } from "@shared/api-types";
+import type { Character, Scene, Cast, InsertCharacter, InsertScene, InsertCast, UserProfile, UserAccountProfile } from "@shared/api-types";
 import { cognitoAuth } from "./cognitoAuth";
 
 // Backend proxy endpoint - all requests are forwarded through our Express server
@@ -291,6 +291,27 @@ class LunchWithAPIClient {
    */
   async deleteCast(sceneId: string, castId: string): Promise<void> {
     return this.request<void>(`/cast/${sceneId}/${castId}`, "DELETE");
+  }
+
+  // ============================================================================
+  // USER PROFILE ENDPOINTS
+  // ============================================================================
+
+  /**
+   * Retrieves current user's identity and accessible accounts
+   * @returns User profile with identity and accounts list
+   */
+  async getUserProfile(): Promise<UserProfile> {
+    return this.request<UserProfile>("/user/me", "GET");
+  }
+
+  /**
+   * Retrieves account-specific profile and preferences for a specific user_id
+   * @param userId - UUID of the user account
+   * @returns User account profile with identity and preferences
+   */
+  async getUserAccount(userId: string): Promise<UserAccountProfile> {
+    return this.request<UserAccountProfile>(`/user/me/${userId}`, "GET");
   }
 }
 
