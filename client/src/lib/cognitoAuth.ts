@@ -51,10 +51,6 @@ class CognitoAuthService {
    * Priority: custom:lwai_accounts → custom:user_id → sub
    */
   private extractLwaiUserId(idTokenPayload: any): string {
-    // Debug: Log all token payload keys to identify custom attributes
-    console.log('🔍 Cognito ID token payload keys:', Object.keys(idTokenPayload));
-    console.log('🔍 Full ID token payload:', idTokenPayload);
-    
     // First, check custom:lwai_accounts (primary source)
     const lwaiAccounts = idTokenPayload['custom:lwai_accounts'];
     if (lwaiAccounts) {
@@ -71,7 +67,6 @@ class CognitoAuthService {
           try {
             const parsed = JSON.parse(trimmed);
             if (Array.isArray(parsed) && parsed.length > 0) {
-              console.log('✅ Extracted LWAI user ID from custom:lwai_accounts (JSON array):', parsed[0]);
               return parsed[0];
             }
           } catch (e) {
@@ -82,11 +77,9 @@ class CognitoAuthService {
         // Handle comma-delimited or single value
         const accounts = trimmed.split(',').map(s => s.trim()).filter(s => s);
         if (accounts.length > 0) {
-          console.log('✅ Extracted LWAI user ID from custom:lwai_accounts:', accounts[0]);
           return accounts[0];
         }
       } else if (Array.isArray(lwaiAccounts) && lwaiAccounts.length > 0) {
-        console.log('✅ Extracted LWAI user ID from custom:lwai_accounts (array):', lwaiAccounts[0]);
         return lwaiAccounts[0];
       }
     }
@@ -94,13 +87,12 @@ class CognitoAuthService {
     // Fallback to custom:user_id
     const customUserId = idTokenPayload['custom:user_id'];
     if (customUserId) {
-      console.log('⚠️ Using fallback custom:user_id:', customUserId);
       return customUserId;
     }
     
     // Last resort: use Cognito sub
     const sub = idTokenPayload.sub;
-    console.warn('⚠️ Using Cognito sub as LWAI user ID (custom attributes missing):', sub);
+    console.warn('⚠️ LWAI account ID not found in Cognito token. Using Cognito sub which may not work correctly.');
     return sub;
   }
 

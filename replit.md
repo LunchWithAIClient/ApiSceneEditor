@@ -124,12 +124,16 @@ The application uses AWS Cognito for user authentication:
 1. **Configuration:** Cognito User Pool ID and App Client ID are stored as environment variables (`VITE_COGNITO_USER_POOL_ID` and `VITE_COGNITO_CLIENT_ID`)
 2. **Sign In:** Users authenticate with username and password via Cognito
 3. **Session Management:** Cognito tokens (access, ID, refresh) are managed by `cognitoAuth.ts`
-4. **User Identification:** User ID is extracted from Cognito ID token payload (`custom:user_id` or `sub`)
+4. **User Identification:** LWAI account ID is extracted from Cognito ID token payload with priority:
+   - Primary: `custom:lwai_accounts` (supports JSON array, comma-delimited, or single string formats)
+   - Fallback: `custom:user_id`
+   - Last resort: `sub` (Cognito user ID)
 5. **API Requests:** Each request includes:
    - `Authorization: Bearer <access_token>` header
-   - `X-LWAI-User-Id: <user_id>` header
+   - `X-LWAI-User-Id: <lwai_account_id>` header extracted from token
 6. **Token Persistence:** Cognito maintains session state across page reloads
 7. **Sign Out:** Clears Cognito session and returns to login screen
+8. **User Profile (Future):** Once `/user/me` endpoint is deployed, it will provide contactName and account preferences for display
 
 **Architectural Rationale:**
 

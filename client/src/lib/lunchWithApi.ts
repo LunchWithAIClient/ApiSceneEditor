@@ -64,8 +64,6 @@ class LunchWithAPIClient {
       "Authorization": `Bearer ${session.tokens.accessToken}`,
       "X-LWAI-User-Id": session.user.userId,
     };
-    
-    console.log(`📤 API Request: ${method} ${endpoint} with User-Id: ${session.user.userId}`);
 
     const config: RequestInit = {
       method,
@@ -104,11 +102,6 @@ class LunchWithAPIClient {
     }
 
     const data = JSON.parse(text);
-    
-    // Debug logging for scene endpoint
-    if (endpoint.includes('/scene')) {
-      console.log("🔍 Raw API response for", endpoint, ":", data);
-    }
     
     /**
      * LunchWith.ai API Response Unwrapping Logic
