@@ -28,7 +28,8 @@ Preferred communication style: Simple, everyday language.
 **State Management:**
 - TanStack Query (React Query) v5 for server state management and data fetching
 - Local component state with React hooks for UI state
-- Custom API client (`lunchWithApi.ts`) for external API communication
+- AWS Cognito authentication service (`cognitoAuth.ts`) for user authentication and session management
+- Custom API client (`lunchWithApi.ts`) for external API communication with Cognito token integration
 
 **Design System:**
 - CSS custom properties for theming (light/dark mode support built-in)
@@ -67,7 +68,8 @@ Preferred communication style: Simple, everyday language.
   - Solves browser CORS restrictions
   - Preserves query strings for pagination/filtering support
   - Excludes request body from GET/HEAD/DELETE methods
-  - Forwards API key from Authorization header to external API
+  - Forwards Cognito access token in Authorization header to external API
+  - Forwards X-LWAI-User-Id header for user identification
 - Server-side rendering setup with Vite integration in development
 - Static file serving for production builds
 
@@ -83,8 +85,10 @@ Preferred communication style: Simple, everyday language.
 
 **Third-Party API Integration:**
 - **LunchWith.ai API:** Primary external service at `https://api2.lunchwith.ai`
-  - Raw API key authentication (no Bearer prefix) using user-provided key
-  - API key stored in localStorage under `lunchwith_api_key`
+  - **Authentication:** AWS Cognito User Pool authentication with JWT tokens
+  - **Headers Required:**
+    - `Authorization: Bearer <access_token>` - Cognito access token
+    - `X-LWAI-User-Id: <user_id>` - LWAI account identifier extracted from Cognito
   - Backend proxy at `/api/lunchwith/*` forwards requests to avoid browser CORS restrictions
   - Endpoints for Characters, Scenes, and Cast management
   - API Operations: PUT (create), POST (update), GET (list/detail), DELETE (remove)
@@ -113,6 +117,20 @@ Preferred communication style: Simple, everyday language.
 - React Hook Form with Zod resolvers for type-safe form validation
 - Drizzle-Zod for automatic schema validation from database models
 
+**Authentication Flow:**
+
+The application uses AWS Cognito for user authentication:
+
+1. **Configuration:** Users provide Cognito User Pool ID and App Client ID on first launch
+2. **Sign In:** Users authenticate with username and password via Cognito
+3. **Session Management:** Cognito tokens (access, ID, refresh) are managed by `cognitoAuth.ts`
+4. **User Identification:** User ID is extracted from Cognito ID token payload (`custom:user_id` or `sub`)
+5. **API Requests:** Each request includes:
+   - `Authorization: Bearer <access_token>` header
+   - `X-LWAI-User-Id: <user_id>` header
+6. **Token Persistence:** Cognito maintains session state across page reloads
+7. **Sign Out:** Clears Cognito session and returns to login screen
+
 **Architectural Rationale:**
 
 The application uses a backend proxy pattern where the frontend communicates with the Express backend, which forwards requests to the LunchWith.ai API. This architecture:
@@ -120,13 +138,13 @@ The application uses a backend proxy pattern where the frontend communicates wit
 1. **Solves CORS restrictions** by using server-to-server communication with the external API
 2. **Reduces backend complexity** by delegating business logic to the external API
 3. **Improves user experience** through client-side state management and optimistic updates
-4. **Maintains security** by requiring user-provided API keys (not server-stored credentials)
+4. **Maintains security** by using Cognito-managed authentication tokens
 5. **Enables future expansion** with the database and storage abstraction already in place
 6. **Supports rapid development** with hot module replacement and modern tooling
 
 **Key Implementation Details:**
 - Frontend makes requests to `/api/lunchwith/*` on the same origin (no CORS)
-- Backend proxy forwards to `https://api2.lunchwith.ai` with proper headers
+- Backend proxy forwards to `https://api2.lunchwith.ai` with proper authentication headers
 - Update operations (POST) exclude ID fields from request body (IDs only in URL path)
 - API responses are unwrapped from `{ results: [...] }` envelope automatically
 
