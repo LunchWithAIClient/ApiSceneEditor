@@ -84,7 +84,7 @@ Preferred communication style: Simple, everyday language.
 ### External Dependencies
 
 **Third-Party API Integration:**
-- **LunchWith.ai API:** Primary external service at `https://api2.lunchwith.ai`
+- **LunchWith.ai API:** Primary external service at `https://beta.lunchwith.ai`
   - **Authentication:** AWS Cognito User Pool authentication with JWT tokens
   - **Headers Required:**
     - `Authorization: Bearer <access_token>` - Cognito access token
@@ -161,7 +161,7 @@ The application uses a backend proxy pattern where the frontend communicates wit
 
 **Key Implementation Details:**
 - Frontend makes requests to `/api/lunchwith/*` on the same origin (no CORS)
-- Backend proxy forwards to `https://api2.lunchwith.ai` with proper authentication headers
+- Backend proxy forwards to `https://beta.lunchwith.ai` with proper authentication headers
 - Update operations (POST) exclude ID fields from request body (IDs only in URL path)
 - API responses are unwrapped from `{ results: [...] }` envelope automatically
 

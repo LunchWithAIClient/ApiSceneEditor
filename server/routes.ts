@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 
-const LUNCHWITH_API_BASE = "https://api2.lunchwith.ai";
+const LUNCHWITH_API_BASE = "https://beta.lunchwith.ai";
 
 async function proxyToLunchWithAPI(
   endpoint: string,
