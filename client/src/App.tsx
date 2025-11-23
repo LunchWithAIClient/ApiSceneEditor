@@ -65,6 +65,8 @@ export default function App() {
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const [loginDialogOpen, setLoginDialogOpen] = useState(false);
   const [username, setUsername] = useState("");
+  const [userId, setUserId] = useState("");
+  const [availableUserIds, setAvailableUserIds] = useState<string[]>([]);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [userAccountProfile, setUserAccountProfile] = useState<UserAccountProfile | null>(null);
 
@@ -112,6 +114,8 @@ export default function App() {
     if (session) {
       setIsAuthenticated(true);
       setUsername(session.user.username);
+      setUserId(session.user.userId);
+      setAvailableUserIds(session.user.availableUserIds);
       
       // Fetch user profile data
       await fetchUserProfile();
@@ -163,6 +167,8 @@ export default function App() {
     if (session) {
       setIsAuthenticated(true);
       setUsername(session.user.username);
+      setUserId(session.user.userId);
+      setAvailableUserIds(session.user.availableUserIds);
       
       // Fetch user profile data
       await fetchUserProfile();
@@ -173,6 +179,16 @@ export default function App() {
   };
 
   /**
+   * Handle account switching
+   * Switches to a different LWAI user account and reloads the page
+   */
+  const handleAccountSwitch = (index: number) => {
+    cognitoAuth.switchUserAccount(index);
+    // Reload the page to refresh all data with the new user account
+    window.location.reload();
+  };
+
+  /**
    * Handle sign out
    * Clears session, clears query cache, and shows login dialog
    */
@@ -180,6 +196,8 @@ export default function App() {
     cognitoAuth.signOut();
     setIsAuthenticated(false);
     setUsername("");
+    setUserId("");
+    setAvailableUserIds([]);
     setUserProfile(null);
     setUserAccountProfile(null);
     
@@ -240,9 +258,12 @@ export default function App() {
           <div className="min-h-screen bg-background">
             <Header 
               username={username}
+              userId={userId}
+              availableUserIds={availableUserIds}
               isAuthenticated={isAuthenticated}
               onSignOut={handleSignOut}
               onManageAuth={() => setLoginDialogOpen(true)}
+              onAccountSwitch={handleAccountSwitch}
             />
             <main>
               <Router />
