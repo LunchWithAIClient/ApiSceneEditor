@@ -16,6 +16,8 @@ import {
 const STORAGE_KEYS = {
   USERNAME: 'cognito_username',
   USER_ID: 'cognito_user_id',
+  AVAILABLE_USER_IDS: 'cognito_available_user_ids',
+  SELECTED_USER_ID_INDEX: 'cognito_selected_user_id_index',
 };
 
 export interface AuthTokens {
@@ -26,7 +28,8 @@ export interface AuthTokens {
 
 export interface AuthUser {
   username: string;
-  userId: string; // LWAI user_id extracted from Cognito attributes
+  userId: string; // Currently selected LWAI user_id
+  availableUserIds: string[]; // All available LWAI user IDs from Cognito
 }
 
 class CognitoAuthService {
@@ -47,10 +50,11 @@ class CognitoAuthService {
   }
 
   /**
-   * Extract LWAI user ID from Cognito ID token payload
+   * Extract all LWAI user IDs from Cognito ID token payload
    * Priority: custom:lwai_accounts → custom:user_id → sub
+   * Returns array of all available user IDs
    */
-  private extractLwaiUserId(idTokenPayload: any): string {
+  private extractAllLwaiUserIds(idTokenPayload: any): string[] {
     // First, check custom:lwai_accounts (primary source)
     const lwaiAccounts = idTokenPayload['custom:lwai_accounts'];
     if (lwaiAccounts) {
@@ -67,7 +71,7 @@ class CognitoAuthService {
           try {
             const parsed = JSON.parse(trimmed);
             if (Array.isArray(parsed) && parsed.length > 0) {
-              return parsed[0];
+              return parsed;
             }
           } catch (e) {
             console.warn('Failed to parse custom:lwai_accounts as JSON:', e);
@@ -77,23 +81,23 @@ class CognitoAuthService {
         // Handle comma-delimited or single value
         const accounts = trimmed.split(',').map(s => s.trim()).filter(s => s);
         if (accounts.length > 0) {
-          return accounts[0];
+          return accounts;
         }
       } else if (Array.isArray(lwaiAccounts) && lwaiAccounts.length > 0) {
-        return lwaiAccounts[0];
+        return lwaiAccounts;
       }
     }
     
     // Fallback to custom:user_id
     const customUserId = idTokenPayload['custom:user_id'];
     if (customUserId) {
-      return customUserId;
+      return [customUserId];
     }
     
     // Last resort: use Cognito sub
     const sub = idTokenPayload.sub;
     console.warn('⚠️ LWAI account ID not found in Cognito token. Using Cognito sub which may not work correctly.');
-    return sub;
+    return [sub];
   }
 
   /**
@@ -132,18 +136,26 @@ class CognitoAuthService {
             refreshToken: session.getRefreshToken().getToken(),
           };
 
-          // Extract LWAI user_id from ID token payload
+          // Extract all LWAI user IDs from ID token payload
           const idTokenPayload = session.getIdToken().payload;
-          const userId = this.extractLwaiUserId(idTokenPayload);
+          const availableUserIds = this.extractAllLwaiUserIds(idTokenPayload);
+          
+          // Get selected index from localStorage (default to 0)
+          const selectedIndex = parseInt(localStorage.getItem(STORAGE_KEYS.SELECTED_USER_ID_INDEX) || '0', 10);
+          const safeIndex = Math.min(selectedIndex, availableUserIds.length - 1);
+          const userId = availableUserIds[safeIndex];
 
           const user: AuthUser = {
             username,
             userId,
+            availableUserIds,
           };
 
-          // Store username and user_id for session persistence
+          // Store auth data for session persistence
           localStorage.setItem(STORAGE_KEYS.USERNAME, username);
           localStorage.setItem(STORAGE_KEYS.USER_ID, userId);
+          localStorage.setItem(STORAGE_KEYS.AVAILABLE_USER_IDS, JSON.stringify(availableUserIds));
+          localStorage.setItem(STORAGE_KEYS.SELECTED_USER_ID_INDEX, safeIndex.toString());
 
           resolve({ tokens, user });
         },
@@ -185,22 +197,47 @@ class CognitoAuthService {
         // Get username from localStorage
         const username = localStorage.getItem(STORAGE_KEYS.USERNAME) || '';
         
-        // Extract LWAI user_id from ID token (always fresh from token)
-        // This ensures we always use the latest value from Cognito
+        // Extract all LWAI user IDs from ID token (always fresh from token)
         const idTokenPayload = session.getIdToken().payload;
-        const userId = this.extractLwaiUserId(idTokenPayload);
+        const availableUserIds = this.extractAllLwaiUserIds(idTokenPayload);
         
-        // Update localStorage with the latest userId
+        // Get selected index from localStorage (default to 0)
+        const selectedIndex = parseInt(localStorage.getItem(STORAGE_KEYS.SELECTED_USER_ID_INDEX) || '0', 10);
+        const safeIndex = Math.min(selectedIndex, availableUserIds.length - 1);
+        const userId = availableUserIds[safeIndex];
+        
+        // Update localStorage with the latest values
         localStorage.setItem(STORAGE_KEYS.USER_ID, userId);
+        localStorage.setItem(STORAGE_KEYS.AVAILABLE_USER_IDS, JSON.stringify(availableUserIds));
+        localStorage.setItem(STORAGE_KEYS.SELECTED_USER_ID_INDEX, safeIndex.toString());
 
         const user: AuthUser = {
           username,
           userId,
+          availableUserIds,
         };
 
         resolve({ tokens, user });
       });
     });
+  }
+
+  /**
+   * Switch to a different LWAI user account
+   * @param index Index of the user ID in the availableUserIds array
+   */
+  switchUserAccount(index: number) {
+    const availableUserIds = JSON.parse(
+      localStorage.getItem(STORAGE_KEYS.AVAILABLE_USER_IDS) || '[]'
+    );
+    
+    if (index < 0 || index >= availableUserIds.length) {
+      throw new Error('Invalid user account index');
+    }
+    
+    const userId = availableUserIds[index];
+    localStorage.setItem(STORAGE_KEYS.SELECTED_USER_ID_INDEX, index.toString());
+    localStorage.setItem(STORAGE_KEYS.USER_ID, userId);
   }
 
   /**
@@ -214,6 +251,8 @@ class CognitoAuthService {
     this.currentUser = null;
     localStorage.removeItem(STORAGE_KEYS.USERNAME);
     localStorage.removeItem(STORAGE_KEYS.USER_ID);
+    localStorage.removeItem(STORAGE_KEYS.AVAILABLE_USER_IDS);
+    localStorage.removeItem(STORAGE_KEYS.SELECTED_USER_ID_INDEX);
   }
 
 }
