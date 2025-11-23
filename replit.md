@@ -119,21 +119,34 @@ Preferred communication style: Simple, everyday language.
 
 **Authentication Flow:**
 
-The application uses AWS Cognito for user authentication:
+The application uses AWS Cognito for user authentication with support for multiple LWAI accounts per user:
 
 1. **Configuration:** Cognito User Pool ID and App Client ID are stored as environment variables (`VITE_COGNITO_USER_POOL_ID` and `VITE_COGNITO_CLIENT_ID`)
 2. **Sign In:** Users authenticate with username and password via Cognito
 3. **Session Management:** Cognito tokens (access, ID, refresh) are managed by `cognitoAuth.ts`
-4. **User Identification:** LWAI account ID is extracted from Cognito ID token payload with priority:
-   - Primary: `custom:lwai_accounts` (supports JSON array, comma-delimited, or single string formats)
-   - Fallback: `custom:user_id`
-   - Last resort: `sub` (Cognito user ID)
-5. **API Requests:** Each request includes:
+4. **Multi-Account Support:** All LWAI account IDs are extracted from Cognito ID token with priority:
+   - Primary: `custom:lwai_accounts` (supports JSON array `["id1", "id2"]`, comma-delimited `"id1,id2"`, or single string `"id1"`)
+   - Fallback: `custom:user_id` (single account)
+   - Last resort: `sub` (Cognito user ID as fallback)
+5. **Account Selection:**
+   - If multiple accounts exist, a dropdown selector appears in the header
+   - User can switch between accounts using the dropdown
+   - Selected account index is persisted in localStorage
+   - Switching accounts triggers a page reload to refresh all data
+6. **API Requests:** Each request includes:
    - `Authorization: Bearer <access_token>` header
-   - `X-LWAI-User-Id: <lwai_account_id>` header extracted from token
-6. **Token Persistence:** Cognito maintains session state across page reloads
-7. **Sign Out:** Clears Cognito session and returns to login screen
-8. **User Profile (Future):** Once `/user/me` endpoint is deployed, it will provide contactName and account preferences for display
+   - `X-LWAI-User-Id: <lwai_account_id>` header (current selected account)
+7. **Token Persistence:** Cognito maintains session state across page reloads
+8. **Sign Out:** Clears Cognito session and returns to login screen
+9. **User Profile (Future):** Once `/user/me` endpoint is deployed, it will provide contactName and account preferences for display
+
+**Cognito Configuration Requirements:**
+- Cognito User Pool must have a custom attribute `custom:lwai_accounts` containing LWAI account ID(s)
+- Format can be:
+  - JSON array: `["1106072e-fa0f-44f4-8c0a-54661c8411e1", "2206072e-fa0f-44f4-8c0a-54661c8411e2"]`
+  - Comma-delimited: `"1106072e-fa0f-44f4-8c0a-54661c8411e1,2206072e-fa0f-44f4-8c0a-54661c8411e2"`
+  - Single string: `"1106072e-fa0f-44f4-8c0a-54661c8411e1"`
+- Fallback attributes `custom:user_id` and `sub` are used if `custom:lwai_accounts` is not present
 
 **Architectural Rationale:**
 

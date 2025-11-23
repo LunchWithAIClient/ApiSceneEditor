@@ -16,7 +16,7 @@ interface HeaderProps {
 export default function Header({ 
   username, 
   userId, 
-  availableUserIds, 
+  availableUserIds = [], 
   isAuthenticated, 
   onSignOut, 
   onManageAuth,

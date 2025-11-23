@@ -140,9 +140,10 @@ class CognitoAuthService {
           const idTokenPayload = session.getIdToken().payload;
           const availableUserIds = this.extractAllLwaiUserIds(idTokenPayload);
           
-          // Get selected index from localStorage (default to 0)
-          const selectedIndex = parseInt(localStorage.getItem(STORAGE_KEYS.SELECTED_USER_ID_INDEX) || '0', 10);
-          const safeIndex = Math.min(selectedIndex, availableUserIds.length - 1);
+          // Get selected index from localStorage (default to 0, handle NaN/invalid)
+          const storedIndex = parseInt(localStorage.getItem(STORAGE_KEYS.SELECTED_USER_ID_INDEX) || '0', 10);
+          const selectedIndex = isNaN(storedIndex) ? 0 : storedIndex;
+          const safeIndex = Math.min(Math.max(0, selectedIndex), availableUserIds.length - 1);
           const userId = availableUserIds[safeIndex];
 
           const user: AuthUser = {
@@ -201,9 +202,10 @@ class CognitoAuthService {
         const idTokenPayload = session.getIdToken().payload;
         const availableUserIds = this.extractAllLwaiUserIds(idTokenPayload);
         
-        // Get selected index from localStorage (default to 0)
-        const selectedIndex = parseInt(localStorage.getItem(STORAGE_KEYS.SELECTED_USER_ID_INDEX) || '0', 10);
-        const safeIndex = Math.min(selectedIndex, availableUserIds.length - 1);
+        // Get selected index from localStorage (default to 0, handle NaN/invalid)
+        const storedIndex = parseInt(localStorage.getItem(STORAGE_KEYS.SELECTED_USER_ID_INDEX) || '0', 10);
+        const selectedIndex = isNaN(storedIndex) ? 0 : storedIndex;
+        const safeIndex = Math.min(Math.max(0, selectedIndex), availableUserIds.length - 1);
         const userId = availableUserIds[safeIndex];
         
         // Update localStorage with the latest values
