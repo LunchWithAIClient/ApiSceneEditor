@@ -1,0 +1,730 @@
+# LunchWith.ai API Endpoints
+
+This document describes all HTTP API endpoints, expected headers, request payloads, and typical responses. It is based on the implementation plan’s “API routes (HttpApi Events) and function mapping” and the current Lambda handler implementations.
+
+# Headers
+
+- Authorization: Bearer &lt;access_token&gt;
+  - A Cognito JWT access token. The HttpApi JWT authorizer validates the token and passes identity claims (including `sub`) to the backend.
+- X-LWAI-User-Id: &lt;user_id&gt; (account selector for multi-account tokens)
+  - Logical LWAI account identifier (`user_id`).
+  - Single-account tokens:
+    - Header is optional; if omitted, the backend infers the only allowed account from the JWT (either from `lwai_accounts` or from the `cognito_sub` → `user` mapping).
+  - Multi-account tokens:
+    - Non-admin callers MUST send this header when more than one account is available in `lwai_accounts`; if omitted, the backend raises an error and handlers return HTTP 400.
+    - The backend verifies that the requested `user_id` is in the allowed `lwai_accounts` list.
+  - Admin callers (where `cognito:groups` includes `admin`) may specify any `user_id`; the backend does not restrict admins to `lwai_accounts` but still logs the selected account.
+- Content-Type: application/json
+  - Required for endpoints that accept a JSON body (POST/PUT).
+- Accept: application/json
+
+Example headers (replace &lt;access_token&gt; with a valid Cognito token):
+Authorization: Bearer eyJraWQiOiJrMW...&lt;snip&gt;...
+Content-Type: application/json
+Accept: application/json
+
+Base URL used in examples: https://beta.lunchwith.ai
+
+# General response format
+
+- On success, endpoints typically return HTTP 200 with a JSON body containing:
+  - results: a list containing one or more objects with restricted/internal fields removed
+  - title and detail fields may also be present in the response body when created via the shared helper
+- Errors include a structured JSON body with title and detail and an appropriate HTTP status code (e.g., 400, 404, 500).
+- Note: GET /story and GET /story/{id} return a plain JSON body string containing results due to legacy behavior.
+
+# Conventions
+
+- All endpoints require the Authorization header.
+- IDs for new resources (e.g., scene_id, character_id, cast_id, augment_id, conversation_id) are generated server-side.
+- Timestamps written by the system follow RFC3339 UTC with trailing ‘Z’ and millisecond precision. Restricted/internal fields are not returned.
+- The LWAI_ENV environment variable and SSM Parameter Store are used internally to resolve DynamoDB table names; clients do not need to provide these.
+
+# Endpoints
+
+## Scene
+
+### POST /scene
+- Purpose: Create a new scene.
+- Request body (optional):
+  - name: string
+  - description: string
+- Example request:
+  Method and URL: POST https://beta.lunchwith.ai/scene
+  Body:
+  {
+    "name": "Coffee Shop",
+    "description": "A cozy place to chat."
+  }
+- Example response (200):
+  {
+    "results": [
+      {
+        "scene_id": "3c9f1f2a-6b5c-4d7a-8e91-2c3d4e5f6a7b",
+        "name": "Coffee Shop",
+        "description": "A cozy place to chat."
+      }
+    ]
+  }
+
+### GET /scene
+- Purpose: List all scenes for the current api_key.
+- Example request:
+  Method and URL: GET https://api2.lunchwith.ai/scene
+- Example response (200):
+  {
+    "results": [
+      {
+        "scene_id": "3c9f1f2a-6b5c-4d7a-8e91-2c3d4e5f6a7b",
+        "name": "Coffee Shop",
+        "description": "A cozy place to chat."
+      }
+    ]
+  }
+
+### GET /scene/{id}
+- Purpose: Retrieve a single scene by id.
+- Example request:
+  Method and URL: GET https://beta.lunchwith.ai/scene/3c9f1f2a-6b5c-4d7a-8e91-2c3d4e5f6a7b
+- Example response (200):
+  {
+    "results": [
+      {
+        "scene_id": "3c9f1f2a-6b5c-4d7a-8e91-2c3d4e5f6a7b",
+        "name": "Coffee Shop",
+        "description": "A cozy place to chat."
+      }
+    ]
+  }
+
+### PUT /scene/{id}
+- Purpose: Update a scene by id (upserts server-side).
+- Request body (one or more):
+  - name: string
+  - description: string
+- Example request:
+  Method and URL: PUT https://beta.lunchwith.ai/scene/3c9f1f2a-6b5c-4d7a-8e91-2c3d4e5f6a7b
+  Body:
+  {
+    "name": "Updated Coffee Shop"
+  }
+- Example response (200):
+  {
+    "results": [
+      {
+        "scene_id": "3c9f1f2a-6b5c-4d7a-8e91-2c3d4e5f6a7b",
+        "name": "Updated Coffee Shop",
+        "description": "A cozy place to chat."
+      }
+    ]
+  }
+
+### DELETE /scene/{id}
+- Purpose: Soft-delete the scene by id (marks deleted=true).
+- Example request:
+  Method and URL: DELETE https://beta.lunchwith.ai/scene/3c9f1f2a-6b5c-4d7a-8e91-2c3d4e5f6a7b
+- Example response (200):
+  {
+    "title": "Success",
+    "detail": "Deleted record with id: 3c9f1f2a-6b5c-4d7a-8e91-2c3d4e5f6a7b"
+  }
+
+## Character
+
+### POST /character
+- Purpose: Create a new character.
+- Request body (optional):
+  - name: string
+  - description: string
+  - motivation: string
+- Example request:
+  Method and URL: POST https://api2.lunchwith.ai/character
+  Body:
+  {
+    "name": "Ava",
+    "description": "Friendly barista",
+    "motivation": "Make people feel welcome"
+  }
+- Example response (200):
+  {
+    "results": [
+      {
+        "character_id": "6d5c4b3a-2f1e-40d9-8c7b-6a5e4d3c2b1a",
+        "name": "Ava",
+        "description": "Friendly barista",
+        "motivation": "Make people feel welcome"
+      }
+    ]
+  }
+
+### GET /character
+- Purpose: List all characters for the current api_key.
+- Example request:
+  Method and URL: GET https://api2.lunchwith.ai/character
+- Example response (200):
+  {
+    "results": [
+      {
+        "character_id": "6d5c4b3a-2f1e-40d9-8c7b-6a5e4d3c2b1a",
+        "name": "Ava",
+        "description": "Friendly barista",
+        "motivation": "Make people feel welcome"
+      }
+    ]
+  }
+
+### GET /character/{id}
+- Purpose: Retrieve a single character by id.
+- Example request:
+  Method and URL: GET https://api2.lunchwith.ai/character/6d5c4b3a-2f1e-40d9-8c7b-6a5e4d3c2b1a
+- Example response (200):
+  {
+    "results": [
+      {
+        "character_id": "6d5c4b3a-2f1e-40d9-8c7b-6a5e4d3c2b1a",
+        "name": "Ava",
+        "description": "Friendly barista",
+        "motivation": "Make people feel welcome"
+      }
+    ]
+  }
+
+### PUT /character/{id}
+- Purpose: Update a character by id.
+- Request body (one or more):
+  - name: string
+  - description: string
+  - motivation: string
+- Example request:
+  Method and URL: PUT https://api2.lunchwith.ai/character/6d5c4b3a-2f1e-40d9-8c7b-6a5e4d3c2b1a
+  Body:
+  {
+    "motivation": "Delight customers"
+  }
+- Example response (200):
+  {
+    "results": [
+      {
+        "character_id": "6d5c4b3a-2f1e-40d9-8c7b-6a5e4d3c2b1a",
+        "name": "Ava",
+        "description": "Friendly barista",
+        "motivation": "Delight customers"
+      }
+    ]
+  }
+
+### DELETE /character/{id}
+- Purpose: Soft-delete the character by id.
+- Example request:
+  Method and URL: DELETE https://api2.lunchwith.ai/character/6d5c4b3a-2f1e-40d9-8c7b-6a5e4d3c2b1a
+- Example response (200):
+  {
+    "title": "Success",
+    "detail": "Deleted record with id: 6d5c4b3a-2f1e-40d9-8c7b-6a5e4d3c2b1a"
+  }
+
+## Cast
+
+### POST /cast/{scene_id}
+- Purpose: Add a cast entry to a scene.
+- Request body (optional):
+  - role: string
+  - goal: string
+  - start: string
+- Example request:
+  Method and URL: POST https://api2.lunchwith.ai/cast/3c9f1f2a-6b5c-4d7a-8e91-2c3d4e5f6a7b
+  Body:
+  {
+    "role": "protagonist",
+    "goal": "Engage the user",
+    "start": "Greets warmly"
+  }
+- Example response (200):
+  {
+    "results": [
+      {
+        "cast_id": "9a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d",
+        "scene_id": "3c9f1f2a-6b5c-4d7a-8e91-2c3d4e5f6a7b",
+        "role": "protagonist",
+        "goal": "Engage the user",
+        "start": "Greets warmly"
+      }
+    ]
+  }
+
+### GET /cast/{scene_id}
+- Purpose: List all cast entries for a scene.
+- Example request:
+  Method and URL: GET https://api2.lunchwith.ai/cast/3c9f1f2a-6b5c-4d7a-8e91-2c3d4e5f6a7b
+- Example response (200):
+  {
+    "results": [
+      {
+        "cast_id": "9a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d",
+        "scene_id": "3c9f1f2a-6b5c-4d7a-8e91-2c3d4e5f6a7b",
+        "role": "protagonist",
+        "goal": "Engage the user",
+        "start": "Greets warmly"
+      }
+    ]
+  }
+
+### GET /cast/{scene_id}/{id}
+- Purpose: Retrieve a cast entry by id for a scene.
+- Example request:
+  Method and URL: GET https://api2.lunchwith.ai/cast/3c9f1f2a-6b5c-4d7a-8e91-2c3d4e5f6a7b/9a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d
+- Example response (200):
+  {
+    "results": [
+      {
+        "cast_id": "9a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d",
+        "scene_id": "3c9f1f2a-6b5c-4d7a-8e91-2c3d4e5f6a7b",
+        "role": "protagonist",
+        "goal": "Engage the user",
+        "start": "Greets warmly"
+      }
+    ]
+  }
+
+### PUT /cast/{scene_id}/{id}
+- Purpose: Update a cast entry.
+- Request body (one or more):
+  - role: string
+  - goal: string
+  - start: string
+- Example request:
+  Method and URL: PUT https://api2.lunchwith.ai/cast/3c9f1f2a-6b5c-4d7a-8e91-2c3d4e5f6a7b/9a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d
+  Body:
+  {
+    "goal": "Engage empathetically"
+  }
+- Example response (200):
+  {
+    "results": [
+      {
+        "cast_id": "9a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d",
+        "scene_id": "3c9f1f2a-6b5c-4d7a-8e91-2c3d4e5f6a7b",
+        "role": "protagonist",
+        "goal": "Engage empathetically",
+        "start": "Greets warmly"
+      }
+    ]
+  }
+
+### DELETE /cast/{scene_id}/{id}
+- Purpose: Soft-delete the cast entry.
+- Example request:
+  Method and URL: DELETE https://api2.lunchwith.ai/cast/3c9f1f2a-6b5c-4d7a-8e91-2c3d4e5f6a7b/9a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d
+- Example response (200):
+  {
+    "title": "Success",
+    "detail": "Deleted record with id: 9a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d"
+  }
+
+## Story
+
+### GET /story
+- Purpose: List all active stories for the current api_key.
+- Example request:
+  Method and URL: GET https://api2.lunchwith.ai/story
+- Example response (200):
+  {
+    "results": [
+      {
+        "story_id": "story-7f3e2d1c9b8a",
+        "scene_id": "3c9f1f2a-6b5c-4d7a-8e91-2c3d4e5f6a7b",
+        "finishup": false,
+        "casting": [
+          {
+            "cast_id": "9a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d",
+            "role": "protagonist",
+            "goal": "Engage the user",
+            "start": "Greets warmly"
+          }
+        ]
+      }
+    ]
+  }
+
+### GET /story/{id}
+- Purpose: Retrieve a single story.
+- Example request:
+  Method and URL: GET https://api2.lunchwith.ai/story/story-7f3e2d1c9b8a
+- Example response (200):
+  {
+    "results": [
+      {
+        "story_id": "story-7f3e2d1c9b8a",
+        "scene_id": "3c9f1f2a-6b5c-4d7a-8e91-2c3d4e5f6a7b",
+        "finishup": false,
+        "casting": [
+          {
+            "cast_id": "9a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d",
+            "role": "protagonist",
+            "goal": "Engage the user",
+            "start": "Greets warmly"
+          }
+        ]
+      }
+    ]
+  }
+
+### POST /story/{id}/start_scene/{scene_id}
+- Purpose: Start a new story for a given scene.
+- Request body: none required (server determines model settings and casting from scene/cast and user/model tables)
+- Example request:
+  Method and URL: POST https://api2.lunchwith.ai/story/story-7f3e2d1c9b8a/start_scene/3c9f1f2a-6b5c-4d7a-8e91-2c3d4e5f6a7b
+- Example response (200):
+  {
+    "results": [
+      {
+        "story_id": "story-7f3e2d1c9b8a",
+        "scene_id": "3c9f1f2a-6b5c-4d7a-8e91-2c3d4e5f6a7b",
+        "finishup": false,
+        "casting": [
+          { "cast_id": "9a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d" }
+        ]
+      }
+    ]
+  }
+
+### POST /story/{id}/end_scene
+- Purpose: End the current scene and trigger scene summaries via Step Functions.
+- Example request:
+  Method and URL: POST https://api2.lunchwith.ai/story/story-7f3e2d1c9b8a/end_scene
+- Example response (200):
+  {
+    "title": "Success",
+    "detail": "Deleted record with id: story-7f3e2d1c9b8a"
+  }
+
+### POST /story/{id}/finish_up
+- Purpose: Instruct characters to complete their goals as quickly as possible (continue the conversation but aim to conclude).
+- Example request:
+  Method and URL: POST https://api2.lunchwith.ai/story/story-7f3e2d1c9b8a/finish_up
+- Example response (200):
+  {
+    "results": [
+      {
+        "story_id": "story-7f3e2d1c9b8a",
+        "scene_id": "3c9f1f2a-6b5c-4d7a-8e91-2c3d4e5f6a7b",
+        "finishup": true,
+        "casting": [
+          { "cast_id": "9a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d" }
+        ]
+      }
+    ]
+  }
+
+### POST /story/{id}/end_conversation
+- Purpose: Politely exit the conversation immediately. When set, downstream steps use the end_prompt from the systemprompt table (see notes below).
+- Example request:
+  Method and URL: POST https://api2.lunchwith.ai/story/story-7f3e2d1c9b8a/end_conversation
+- Example response (200):
+  {
+    "results": [
+      {
+        "story_id": "story-7f3e2d1c9b8a",
+        "scene_id": "3c9f1f2a-6b5c-4d7a-8e91-2c3d4e5f6a7b",
+        "end_conversation": true,
+        "casting": [
+          { "cast_id": "9a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d" }
+        ]
+      }
+    ]
+  }
+- Seeding note: The seed script defaults systemprompt.end_prompt to finished_prompt, so you can omit end_prompt in CSV seeding.
+
+### POST /story/{id}/cast/{character_id}/as/{cast_id}
+- Purpose: Associate a character with a cast entry in the active story.
+- Example request:
+  Method and URL: POST https://api2.lunchwith.ai/story/story-7f3e2d1c9b8a/cast/6d5c4b3a-2f1e-40d9-8c7b-6a5e4d3c2b1a/as/9a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d
+- Example response (200):
+  {
+    "results": [
+      {
+        "story_id": "story-7f3e2d1c9b8a",
+        "scene_id": "3c9f1f2a-6b5c-4d7a-8e91-2c3d4e5f6a7b",
+        "finishup": false,
+        "casting": [
+          { "cast_id": "9a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d", "character_id": "6d5c4b3a-2f1e-40d9-8c7b-6a5e4d3c2b1a", "summarize": false }
+        ]
+      }
+    ]
+  }
+
+### POST /story/{id}/summarize/{cast_id}
+- Purpose: Mark a cast entry for summarization during end_scene.
+- Example request:
+  Method and URL: POST https://api2.lunchwith.ai/story/story-7f3e2d1c9b8a/summarize/9a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d
+- Example response (200):
+  {
+    "results": [
+      {
+        "story_id": "story-7f3e2d1c9b8a",
+        "scene_id": "3c9f1f2a-6b5c-4d7a-8e91-2c3d4e5f6a7b",
+        "finishup": false,
+        "casting": [
+          { "cast_id": "9a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d", "summarize": true }
+        ]
+      }
+    ]
+  }
+
+### GET /story/{id}/get_response_step/{cast_id}
+- Purpose: Trigger a cast response generation via Step Functions.
+- Example request:
+  Method and URL: GET https://api2.lunchwith.ai/story/story-7f3e2d1c9b8a/get_response_step/9a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d
+- Example response (200):
+  {
+    "title": "Posted",
+    "detail": { "message": "Response for cast_id: 9a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d being generated for story_id: story-7f3e2d1c9b8a" }
+  }
+
+## Story Augment
+
+### POST /story/{id}/augment/{cast_id}
+- Purpose: Add or update an augment (extra narrative text) for the current take and cast.
+- Request body:
+  - augment: string (the augment text)
+- Behavior:
+  - If an augment already exists for (story_id, cast_id, current take), it is updated; otherwise, a new one is created.
+- Example request:
+  Method and URL: POST https://api2.lunchwith.ai/story/story-7f3e2d1c9b8a/augment/9a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d
+  Body:
+  {
+    "augment": "The overhead lights revealed a quiet confidence."
+  }
+- Example response (200):
+  {
+    "results": [
+      {
+        "story_id": "story-7f3e2d1c9b8a",
+        "cast_id": "9a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d",
+        "augment": "The overhead lights revealed a quiet confidence."
+      }
+    ]
+  }
+
+### GET /story/{id}/augment/{cast_id}
+- Purpose: Retrieve the augment for the current take and cast (if one exists).
+- Example request:
+  Method and URL: GET https://api2.lunchwith.ai/story/story-7f3e2d1c9b8a/augment/9a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d
+- Example response (200):
+  {
+    "results": [
+      {
+        "story_id": "story-7f3e2d1c9b8a",
+        "cast_id": "9a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d",
+        "augment": "The overhead lights revealed a quiet confidence."
+      }
+    ]
+  }
+
+### PUT /story/{id}/augment/{cast_id}
+- Purpose: Update an existing augment for the current take and cast.
+- Request body:
+  - augment: string
+- Example request:
+  Method and URL: PUT https://api2.lunchwith.ai/story/story-7f3e2d1c9b8a/augment/9a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d
+  Body:
+  {
+    "augment": "A revised augment text."
+  }
+- Example response (200):
+  {
+    "results": [
+      {
+        "story_id": "story-7f3e2d1c9b8a",
+        "cast_id": "9a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d",
+        "augment": "A revised augment text."
+      }
+    ]
+  }
+
+### DELETE /story/{id}/augment/{cast_id}
+- Purpose: Delete the augment for the current take and cast.
+- Example request:
+  Method and URL: DELETE https://api2.lunchwith.ai/story/story-7f3e2d1c9b8a/augment/9a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d
+- Example response (200):
+  {
+    "title": "Success",
+    "detail": "Deleted record with id: <augment record id>"
+  }
+
+## Story Conversation
+
+### POST /story/{id}/post_response/{cast_id}
+- Purpose: Post a conversation response for the given cast in the active story.
+- Request body:
+  - response: string
+- Behavior:
+  - The server stores a normalized response_json: { "response": "<text>" } and token usage fields initialized to 0.
+- Example request:
+  Method and URL: POST https://api2.lunchwith.ai/story/story-7f3e2d1c9b8a/post_response/9a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d
+  Body:
+  {
+    "response": "It was a dark and stormy night."
+  }
+- Example response (200):
+  {
+    "results": [
+      {
+        "story_id": "story-7f3e2d1c9b8a",
+        "cast_id": "9a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d",
+        "response_json": { "response": "It was a dark and stormy night." }
+      }
+    ]
+  }
+
+## User Profile and Preferences
+
+### GET /user/me  (identity + accounts list — Option B)
+
+- Purpose: Return the current authenticated Cognito identity and the list of LWAI accounts (`user_id` values) that this identity can access.
+- Auth: Requires a valid Cognito JWT Access Token in the `Authorization: Bearer <access_token>` header.
+- Behavior (target multi-account design):
+  - Extract Cognito `sub` (and optionally `email`, `name`) from the JWT claims.
+  - Determine the set of LWAI accounts (user_ids) available to this identity, for example:
+    - From a custom JWT claim (e.g., `lwai_accounts`: `["user-id-1", "user-id-2"]`), or
+    - From a server-side mapping from `sub` to accounts.
+  - Return:
+    - `identity`: Cognito-level identity (`sub`, `email`, `name`).
+    - `accounts`: a list of account objects, each including at least:
+      - `user_id`: internal LWAI account identifier.
+      - Optional metadata such as `name` or `contactName`.
+- Example request:
+  - Method and URL: `GET https://api2.lunchwith.ai/user/me`
+- Example response (single-account case, which matches current implementation semantics):
+  ```json
+  {
+    "results": [
+      {
+        "identity": {
+          "sub": "b8a13390-7011-7046-20ba-ba54b064f207",
+          "email": null,
+          "name": null
+        },
+        "accounts": [
+          {
+            "user_id": "ac2c9954-bdc4-49aa-8ef35bc67b22",
+            "contactName": "pytest-user"
+          }
+        ]
+      }
+    ],
+    "statusCode": 200,
+    "title": "OK",
+    "detail": "Current identity and accessible accounts"
+  }
+  ```
+
+### GET /user/me/{user_id}  (account-specific profile — Option A)
+
+- Purpose: Return identity + preferences for a specific LWAI account (`user_id`) that the caller can access.
+- Auth: Requires a valid Cognito JWT Access Token in the `Authorization: Bearer <access_token>` header.
+- Account selection:
+  - The `{user_id}` path parameter identifies which LWAI account is being queried.
+  - In a multi-account setup, the backend must verify that this `user_id` is allowed for the calling identity (e.g., present in the token’s `lwai_accounts` claim or equivalent mapping).
+  - The `X-LWAI-User-Id` header may be treated as an equivalent selector for other endpoints; for this route, the path parameter is canonical.
+- Behavior:
+  - Extract `sub` and other claims from the JWT.
+  - Verify that `{user_id}` is in the set of accounts the caller can access.
+  - Load the corresponding `user` row (partitioned by `user_id` / `api_key`) and build:
+    - `identity`:
+      - `user_id`: the requested account identifier.
+      - `sub`, `email`, `name`.
+    - `preferences` (from the `user` row):
+      - `user_id`
+      - `sqs_url`
+      - `model_name`, `model_created_on`
+      - `prompt_id`, `prompt_created_on`
+      - `contactName` (if present)
+- Example request:
+  - Method and URL: `GET https://api2.lunchwith.ai/user/me/ac2c9954-bdc4-49aa-b80a-8ef35bc67b22`
+- Example response (200, single-account example):
+  ```json
+  {
+    "results": [
+      {
+        "identity": {
+          "user_id": "ac2c9954-bdc4-49aa-b80a-8ef35bc67b22",
+          "sub": "b8a13390-7011-7046-20ba-ba54b064f207",
+          "email": null,
+          "name": null
+        },
+        "preferences": {
+          "user_id": "ac2c9954-bdc4-49aa-b80a-8ef35bc67b22",
+          "sqs_url": "https://sqs.us-west-2.amazonaws.com/539247463838/LunchWithAI-Testing-dev",
+          "model_name": "trance",
+          "model_created_on": "2025-08-25T18:58:26.536Z",
+          "prompt_id": "80158cc4-1e17-4e49-8d38-f8e2cb4e3d5e",
+          "prompt_created_on": "2025-05-17T14:07:06.820425",
+          "contactName": "pytest-user"
+        }
+      }
+    ],
+    "statusCode": 200,
+    "title": "OK",
+    "detail": "Current user profile for selected account"
+  }
+  ```
+
+### PUT /user/me/{user_id}
+
+- Purpose: Update selected application-level preference fields for a specific LWAI account (`user_id`) that the caller can access.
+- Auth: Requires a valid Cognito JWT Access Token in the `Authorization: Bearer <access_token>` header.
+- Account selection:
+  - `{user_id}` path parameter selects the account whose preferences are being updated.
+  - Backend verifies that the caller is allowed to act on this `user_id` (as above).
+- Allowed fields in request body:
+  - `sqs_url`: string — SQS QueueUrl where the system should send story responses for this account.
+  - `contactName`: string — human-readable contact name for this account.
+- Behavior:
+  - Ignores any fields other than `sqs_url` and `contactName`.
+  - If no allowed fields are present, responds with HTTP 400 and detail:
+    - `"No updatable fields provided; allowed fields are: sqs_url, contactName"`.
+  - Updates only the `user` record in DynamoDB for that `user_id` (does not modify Cognito attributes such as email/name).
+  - Returns the updated identity + preferences document, identical in shape to `GET /user/me/{user_id}`.
+- Example request:
+  - Method and URL: `PUT https://api2.lunchwith.ai/user/me/ac2c9954-bdc4-49aa-b80a-8ef35bc67b22`
+  - Body:
+    ```json
+    {
+      "contactName": "pytest-user-updated"
+    }
+    ```
+- Example response (200):
+  ```json
+  {
+    "results": [
+      {
+        "identity": {
+          "user_id": "ac2c9954-bdc4-49aa-b80a-8ef35bc67b22",
+          "sub": "b8a13390-7011-7046-20ba-ba54b064f207",
+          "email": null,
+          "name": null
+        },
+        "preferences": {
+          "user_id": "ac2c9954-bdc4-49aa-b80a-8ef35bc67b22",
+          "sqs_url": "https://sqs.us-west-2.amazonaws.com/539247463838/LunchWithAI-Testing-dev",
+          "model_name": "trance",
+          "model_created_on": "2025-08-25T18:58:26.536Z",
+          "prompt_id": "80158cc4-1e17-4e49-8d38-f8e2cb4e3d5e",
+          "prompt_created_on": "2025-05-17T14:07:06.820425",
+          "contactName": "pytest-user-updated"
+        }
+      }
+    ],
+    "statusCode": 200,
+    "title": "OK",
+    "detail": "Updated user preferences for selected account"
+  }
+  ```
+
+Notes
+
+- Authentication is enforced by API Gateway HttpApi using a Cognito JWT authorizer. All clients must send `Authorization: Bearer &lt;access_token&gt;`; legacy `Authorization: &lt;api_key&gt;` headers are not supported on these endpoints.
+- The authorizer enforces the presence and validity of the Authorization token and passes JWT claims (including `sub`, optional `lwai_accounts`, and optional `cognito:groups`) to the backend.
+- Soft-delete semantics: DELETE operations do not remove items; they mark deleted=true so list/get operations no longer return them.
+- Casting data in start_scene responses is intentionally minimal; role/goal/start are omitted. GET story responses may include role/goal/start for readability, and character_id appears only after POST /story/{id}/cast/{character_id}/as/{cast_id}.
