@@ -173,23 +173,21 @@ class LunchWithAPIClient {
 
   /**
    * Creates a new character
-   * Note: LunchWith.ai uses PUT for creating resources
    * @param character - Character data (without ID)
    * @returns Newly created character with generated ID
    */
   async createCharacter(character: InsertCharacter): Promise<Character> {
-    return this.request<Character>("/character/", "PUT", character);
+    return this.request<Character>("/character", "POST", character);
   }
 
   /**
    * Updates an existing character
-   * Note: LunchWith.ai uses POST for updating resources
    * @param characterId - UUID of the character to update
    * @param character - Partial character data to update
    * @returns Updated character object
    */
   async updateCharacter(characterId: string, character: Partial<Character>): Promise<Character> {
-    return this.request<Character>(`/character/${characterId}`, "POST", character);
+    return this.request<Character>(`/character/${characterId}`, "PUT", character);
   }
 
   /**
@@ -214,23 +212,21 @@ class LunchWithAPIClient {
 
   /**
    * Creates a new scene
-   * Note: LunchWith.ai uses PUT for creating resources
    * @param scene - Scene data (without ID)
    * @returns Newly created scene with generated ID
    */
   async createScene(scene: InsertScene): Promise<Scene> {
-    return this.request<Scene>("/scene", "PUT", scene);
+    return this.request<Scene>("/scene", "POST", scene);
   }
 
   /**
    * Updates an existing scene
-   * Note: LunchWith.ai uses POST for updating resources
    * @param sceneId - UUID of the scene to update
    * @param scene - Partial scene data to update
    * @returns Updated scene object
    */
   async updateScene(sceneId: string, scene: Partial<Scene>): Promise<Scene> {
-    return this.request<Scene>(`/scene/${sceneId}`, "POST", scene);
+    return this.request<Scene>(`/scene/${sceneId}`, "PUT", scene);
   }
 
   /**
@@ -265,25 +261,23 @@ class LunchWithAPIClient {
 
   /**
    * Creates a new cast member in a scene
-   * Note: LunchWith.ai uses PUT for creating resources
    * @param sceneId - UUID of the scene
    * @param cast - Cast member data (without ID, but includes scene_id)
    * @returns Newly created cast member with generated ID
    */
   async createCast(sceneId: string, cast: InsertCast): Promise<Cast> {
-    return this.request<Cast>(`/cast/${sceneId}`, "PUT", cast);
+    return this.request<Cast>(`/cast/${sceneId}`, "POST", cast);
   }
 
   /**
    * Updates an existing cast member
-   * Note: LunchWith.ai uses POST for updating resources
    * @param sceneId - UUID of the scene
    * @param castId - UUID of the cast member to update
    * @param cast - Partial cast member data to update
    * @returns Updated cast member object
    */
   async updateCast(sceneId: string, castId: string, cast: Partial<Cast>): Promise<Cast> {
-    return this.request<Cast>(`/cast/${sceneId}/${castId}`, "POST", cast);
+    return this.request<Cast>(`/cast/${sceneId}/${castId}`, "PUT", cast);
   }
 
   /**
