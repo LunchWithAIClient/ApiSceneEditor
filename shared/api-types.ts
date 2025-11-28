@@ -3,12 +3,14 @@ export interface Character {
   name: string;
   description: string;
   motivation: string;
+  deleted?: boolean;
 }
 
 export interface Scene {
   scene_id: string;
   name: string;
   description: string;
+  deleted?: boolean;
 }
 
 export interface Cast {
@@ -17,6 +19,7 @@ export interface Cast {
   role: string;
   goal: string;
   start: string;
+  deleted?: boolean;
 }
 
 export type InsertCharacter = Omit<Character, 'character_id'>;

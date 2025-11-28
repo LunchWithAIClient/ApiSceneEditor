@@ -53,6 +53,7 @@ export default function Scenes() {
 
   /**
    * Loads all scenes from the API and fetches cast members for each scene
+   * Filters out deleted scenes and deleted cast members
    * Uses Promise.all to fetch cast members in parallel for better performance
    * Gracefully handles errors for individual cast member fetches
    */
@@ -60,15 +61,18 @@ export default function Scenes() {
     try {
       setIsLoading(true);
       const data = await apiClient.getScenes();
-      setScenes(data);
+      // Filter out deleted scenes
+      const activeScenes = data.filter((scene) => !scene.deleted);
+      setScenes(activeScenes);
       
       // Fetch cast members for all scenes in parallel
       const castData: Record<string, any[]> = {};
       await Promise.all(
-        data.map(async (scene) => {
+        activeScenes.map(async (scene) => {
           try {
             const cast = await apiClient.getCastMembers(scene.scene_id);
-            castData[scene.scene_id] = cast;
+            // Filter out deleted cast members
+            castData[scene.scene_id] = cast.filter((c: any) => !c.deleted);
           } catch (error) {
             // If fetching cast fails for a scene, set empty array
             castData[scene.scene_id] = [];

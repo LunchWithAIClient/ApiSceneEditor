@@ -117,6 +117,7 @@ export default function SceneDetail() {
 
   /**
    * Loads cast members for this scene from the API
+   * Filters out deleted cast members
    * Only executes if sceneId is present
    */
   const loadCastMembers = async () => {
@@ -124,7 +125,9 @@ export default function SceneDetail() {
     
     try {
       const data = await apiClient.getCastMembers(sceneId);
-      setCastMembers(data);
+      // Filter out deleted cast members
+      const activeCastMembers = data.filter((cast) => !cast.deleted);
+      setCastMembers(activeCastMembers);
     } catch (error) {
       toast({
         title: "Error loading cast members",

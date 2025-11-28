@@ -50,13 +50,16 @@ export default function Characters() {
 
   /**
    * Loads all characters from the API
+   * Filters out deleted characters
    * Sets loading state and handles errors with toast notifications
    */
   const loadCharacters = async () => {
     try {
       setIsLoading(true);
       const data = await apiClient.getCharacters();
-      setCharacters(data);
+      // Filter out deleted characters
+      const activeCharacters = data.filter((char) => !char.deleted);
+      setCharacters(activeCharacters);
     } catch (error) {
       toast({
         title: "Error loading characters",
