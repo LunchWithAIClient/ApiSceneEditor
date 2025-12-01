@@ -17,6 +17,14 @@ import type { Character, Scene, Cast, InsertCharacter, InsertScene, InsertCast }
 const API_BASE_URL = "/api/lunchwith";
 // LocalStorage key for persisting the API key across sessions
 const API_KEY_STORAGE_KEY = "lunchwith_api_key";
+// LocalStorage key for persisting the user ID across sessions
+const USER_ID_STORAGE_KEY = "lunchwith_user_id";
+
+export interface LunchWithUser {
+  user_id: string;
+  email?: string;
+  name?: string;
+}
 
 /**
  * LunchWith.ai API Client Class
@@ -24,12 +32,14 @@ const API_KEY_STORAGE_KEY = "lunchwith_api_key";
  */
 class LunchWithAPIClient {
   private apiKey: string | null = null;
+  private userId: string | null = null;
 
   /**
-   * Initializes the client and loads API key from localStorage if available
+   * Initializes the client and loads API key and user ID from localStorage if available
    */
   constructor() {
     this.apiKey = localStorage.getItem(API_KEY_STORAGE_KEY);
+    this.userId = localStorage.getItem(USER_ID_STORAGE_KEY);
   }
 
   /**
@@ -58,6 +68,80 @@ class LunchWithAPIClient {
   }
 
   /**
+   * Sets and persists the user ID
+   * @param userId - The LunchWith.ai user ID
+   */
+  setUserId(userId: string) {
+    this.userId = userId;
+    localStorage.setItem(USER_ID_STORAGE_KEY, userId);
+  }
+
+  /**
+   * Returns the current user ID
+   * @returns The user ID or null if not set
+   */
+  getUserId(): string | null {
+    return this.userId;
+  }
+
+  /**
+   * Removes the user ID from memory and localStorage
+   */
+  clearUserId() {
+    this.userId = null;
+    localStorage.removeItem(USER_ID_STORAGE_KEY);
+  }
+
+  /**
+   * Fetches current user info from the API and stores the user ID
+   * This should be called after setting the API key to initialize the user ID
+   * @returns User info including user_id
+   */
+  async fetchAndStoreUserId(): Promise<LunchWithUser> {
+    if (!this.apiKey) {
+      throw new Error("API key not set. Please configure your API key.");
+    }
+
+    const headers: HeadersInit = {
+      "Content-Type": "application/json",
+      "Authorization": this.apiKey,
+    };
+
+    const response = await fetch(`${API_BASE_URL}/user/me`, {
+      method: "GET",
+      headers,
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(
+        `Failed to fetch user info: ${response.status} ${response.statusText}. ${errorText}`
+      );
+    }
+
+    const text = await response.text();
+    if (!text) {
+      throw new Error("Empty response from user/me endpoint");
+    }
+
+    const data = JSON.parse(text);
+    
+    // Handle wrapped response format
+    let user: LunchWithUser;
+    if (data && typeof data === 'object' && 'results' in data && Array.isArray(data.results)) {
+      user = data.results[0];
+    } else {
+      user = data;
+    }
+
+    if (user && user.user_id) {
+      this.setUserId(user.user_id);
+    }
+
+    return user;
+  }
+
+  /**
    * Generic request method for all API calls
    * Handles authentication, response parsing, and LunchWith.ai response unwrapping
    * 
@@ -83,10 +167,16 @@ class LunchWithAPIClient {
       throw new Error("API key not set. Please configure your API key.");
     }
 
-    // Setup request headers with API key for authentication
+    // Ensure user ID is available for API calls
+    if (!this.userId) {
+      throw new Error("User ID not set. Please wait for initialization to complete.");
+    }
+
+    // Setup request headers with API key and user ID for authentication
     const headers: HeadersInit = {
       "Content-Type": "application/json",
       "Authorization": this.apiKey,
+      "X-LWAI-User-Id": this.userId,
     };
 
     const config: RequestInit = {

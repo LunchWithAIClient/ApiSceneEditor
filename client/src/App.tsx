@@ -61,30 +61,73 @@ function Router() {
 export default function App() {
   const [apiKey, setApiKey] = useState("");
   const [apiKeyDialogOpen, setApiKeyDialogOpen] = useState(false);
+  const [isInitializing, setIsInitializing] = useState(true);
 
   /**
-   * Check for stored API key on mount
-   * If missing, show dialog to prompt user for key
+   * Check for stored API key on mount and initialize user ID if needed
+   * If missing API key, show dialog to prompt user for key
    */
   useEffect(() => {
-    const storedKey = apiClient.getApiKey();
-    if (storedKey) {
-      setApiKey(storedKey);
-    } else {
-      setApiKeyDialogOpen(true);
-    }
+    const initializeAuth = async () => {
+      const storedKey = apiClient.getApiKey();
+      if (storedKey) {
+        setApiKey(storedKey);
+        
+        // Check if we need to fetch the user ID
+        const storedUserId = apiClient.getUserId();
+        if (!storedUserId) {
+          try {
+            // Fetch and store the user ID from the API
+            await apiClient.fetchAndStoreUserId();
+          } catch (error) {
+            console.error("Failed to fetch user ID:", error);
+            // If we can't get user ID, clear the API key and show dialog
+            apiClient.clearApiKey();
+            apiClient.clearUserId();
+            setApiKey("");
+            setApiKeyDialogOpen(true);
+          }
+        }
+      } else {
+        setApiKeyDialogOpen(true);
+      }
+      setIsInitializing(false);
+    };
+
+    initializeAuth();
   }, []);
 
   /**
-   * Saves new API key and reloads the page
-   * Page reload ensures apiClient singleton picks up the new key from localStorage
+   * Saves new API key and fetches user ID
    * @param key - The new API key to save
    */
-  const handleSaveApiKey = (key: string) => {
+  const handleSaveApiKey = async (key: string) => {
     setApiKey(key);
     apiClient.setApiKey(key);
-    window.location.reload();
+    
+    try {
+      // Fetch and store the user ID with the new API key
+      await apiClient.fetchAndStoreUserId();
+      // Reload to ensure all components use the new credentials
+      window.location.reload();
+    } catch (error) {
+      console.error("Failed to validate API key:", error);
+      // Clear the invalid key and show error
+      apiClient.clearApiKey();
+      apiClient.clearUserId();
+      setApiKey("");
+      alert("Invalid API key or unable to authenticate. Please check your API key and try again.");
+    }
   };
+
+  // Show loading state while initializing
+  if (isInitializing) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-muted-foreground">Loading...</div>
+      </div>
+    );
+  }
 
   return (
     <QueryClientProvider client={queryClient}>

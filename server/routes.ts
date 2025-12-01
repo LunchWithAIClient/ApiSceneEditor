@@ -7,12 +7,18 @@ async function proxyToLunchWithAPI(
   endpoint: string,
   method: string,
   apiKey: string,
+  userId?: string,
   body?: any
 ): Promise<Response> {
   const headers: HeadersInit = {
     "Content-Type": "application/json",
     "Authorization": apiKey,
   };
+
+  // Add user ID header if provided
+  if (userId) {
+    (headers as Record<string, string>)["X-LWAI-User-Id"] = userId;
+  }
 
   const config: RequestInit = {
     method,
@@ -40,6 +46,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const apiKey = authHeader;
       
+      // Extract user ID from X-LWAI-User-Id header (optional for /user/me endpoint)
+      const userId = req.headers["x-lwai-user-id"] as string | undefined;
+      
       // Extract the endpoint path and preserve query string
       // req.url includes both path and query string
       const endpoint = req.url.replace("/api/lunchwith", "");
@@ -49,6 +58,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         endpoint,
         req.method,
         apiKey,
+        userId,
         req.body
       );
 
